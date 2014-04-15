@@ -52,6 +52,7 @@ if [ "x${VM_GUI}" == "xyes" ] || [ "x${VM_GUI}" == "x1" ]; then
 else
   STARTVM="VBoxManage startvm ${BOX} --type headless"
 fi
+STOPVM="VBoxManage controlvm ${BOX} poweroff"
 
 # Env option: Use custom preseed.cfg or default
 DEFAULT_PRESEED="preseed.cfg"
@@ -77,6 +78,15 @@ else
 fi
 
 # start with a clean slate
+if VBoxManage list runningvms | grep "${BOX}" >/dev/null 2>&1; then
+  echo "Stopping vm ..."
+  ${STOPVM}
+fi
+if VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
+  echo "Unregistering vm ..."
+  VBoxManage unregistervm "${BOX}" --delete
+fi
+
 if [ -d "${FOLDER_BUILD}" ]; then
   echo "Cleaning build directory ..."
   chmod -R u+w "${FOLDER_BUILD}"
@@ -89,10 +99,6 @@ fi
 if [ -f "${FOLDER_BASE}/${BOX}.box" ]; then
   echo "Removing old ${BOX}.box" ...
   rm "${FOLDER_BASE}/${BOX}.box"
-fi
-if VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
-  echo "Unregistering vm ..."
-  VBoxManage unregistervm "${BOX}" --delete
 fi
 
 # Setting things back up again
