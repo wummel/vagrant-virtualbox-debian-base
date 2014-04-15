@@ -1,0 +1,2 @@
+deploy  ALL=(ALL:ALL) NOPASSWD: ALL
+Defaults env_keep+="SSH_AUTH_SOCK"

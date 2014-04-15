@@ -40,6 +40,18 @@ fi
 # Env option: local SSH pubkey
 SSHKEY="${SSHKEY:-}"
 
+# Env option: optionally run ansible playbook
+ANSIBLE_PLAYBOOK="${ANSIBLE_PLAYBOOK:-}"
+if [ -n "$ANSIBLE_PLAYBOOK" ]; then
+  hash ansible-playbook 2>/dev/null || { echo >&2 "ERROR: ansible-playbook not found. Aborting."; exit 1; }
+fi
+# Env option: local SSH port for ansible
+ANSIBLE_SSHPORT="2222"
+# local SSH user for ansible
+ANSIBLE_USER="deploy"
+# Guest additions ISO on the host system
+VBOX_GUEST_ADDITIONS=/usr/share/virtualbox/VBoxGuestAdditions.iso
+
 # location, location, location
 FOLDER_BASE=$(pwd)
 FOLDER_ISO="${FOLDER_BASE}/iso"
@@ -89,7 +101,9 @@ if VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
   echo "Unregistering vm ..."
   VBoxManage unregistervm "${BOX}" --delete
 fi
-
+if [ -f host.ini ]; then
+  rm host.ini
+fi
 if [ -d "${FOLDER_BUILD}" ]; then
   echo "Cleaning build directory ..."
   chmod -R u+w "${FOLDER_BUILD}"
@@ -183,7 +197,12 @@ if [ ! -e "${FOLDER_ISO}/custom.iso" ]; then
   # add local ssh key
   if [ -n "${SSHKEY}" ]; then
     cp "${SSHKEY}" "${FOLDER_ISO_CUSTOM}/sshkey.pub"
+  else
+    curl --output "${FOLDER_ISO_CUSTOM}/sshkey.pub" "https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub"
   fi
+
+  # Add sudo config file
+  cp user.sudo "${FOLDER_ISO_CUSTOM}/user.sudo"
 
   echo "Running mkisofs ..."
   "$MKISOFS" -r -V "Custom Debian Install CD" \
@@ -252,6 +271,43 @@ if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>/dev/null; then
     echo -n "."
   done
   echo ""
+
+  VBoxManage storageattach "${BOX}" \
+    --storagectl "IDE Controller" \
+    --port 1 \
+    --device 0 \
+    --type dvddrive \
+    --medium emptydrive
+fi
+
+if [ -n "${ANSIBLE_PLAYBOOK}" ]; then
+  # Run an ansible playbook with mounted VBox Guest Additions
+
+  VBoxManage modifyvm "${BOX}" \
+    --natpf1 "ssh,tcp,,${ANSIBLE_SSHPORT},,22"
+
+  VBoxManage storageattach "${BOX}" \
+    --storagectl "IDE Controller" \
+    --port 1 \
+    --device 0 \
+    --type dvddrive \
+    --medium "${VBOX_GUEST_ADDITIONS}"
+
+  ${STARTVM}
+  echo "Waiting for VM ssh server "
+  while ! ansible all -i host.ini -m ping --user ${ANSIBLE_USER} >/dev/null; do
+    sleep 1
+    echo -n "."
+  done
+  echo ""
+  echo "Running Ansible Playbook ..."
+  echo "127.0.0.1:${ANSIBLE_SSHPORT}" > host.ini
+  ansible-playbook -i host.ini "${ANSIBLE_PLAYBOOK}"
+
+  ${STOPVM}
+
+  VBoxManage modifyvm "${BOX}" \
+    --natpf1 delete ssh
 
   VBoxManage storageattach "${BOX}" \
     --storagectl "IDE Controller" \

@@ -1,29 +1,25 @@
 #!/bin/bash
 
-# passwordless sudo
-echo "%sudo   ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+BASEDIR=$(dirname $0)
+DEPLOY_USER=deploy
 
 # public ssh key for vagrant user
-mkdir /home/vagrant/.ssh
-wget -O /home/vagrant/.ssh/authorized_keys "https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub"
-chmod 755 /home/vagrant/.ssh
-chmod 644 /home/vagrant/.ssh/authorized_keys
-chown -R vagrant:vagrant /home/vagrant/.ssh
+mkdir -m 0700 /home/$DEPLOY_USER/.ssh
+cp "${BASEDIR}/sshkey.pub" /home/$DEPLOY_USER/.ssh/authorized_keys
+chmod 0600 /home/$DEPLOY_USER/.ssh/authorized_keys
+chown -R $DEPLOY_USER:$DEPLOY_USER /home/$DEPLOY_USER/.ssh
 
-# speed up ssh
-echo "UseDNS no" >> /etc/ssh/sshd_config
+# install sudo config
+cp "${BASEDIR}/${DEPLOY_USER}.sudo" /etc/sudoers.d/${DEPLOY_USER}
+chmod 0440 /etc/sudoers.d/${DEPLOY_USER}
+chown root:root /etc/sudoers.d/${DEPLOY_USER}
 
-# get chef
-gem install chef --no-rdoc --no-ri
-
-# display login promt after boot
-sed "s/quiet splash//" /etc/default/grub > /tmp/grub
-sed "s/GRUB_TIMEOUT=[0-9]/GRUB_TIMEOUT=0/" /tmp/grub > /etc/default/grub
+# display grub timeout and login promt after boot
+sed -i \
+  -e "s/quiet splash//" \
+  -e "s/GRUB_TIMEOUT=[0-9]/GRUB_TIMEOUT=0/" \
+  /etc/default/grub
 update-grub
 
 # clean up
 apt-get clean
-
-# Zero free space to aid VM compression
-dd if=/dev/zero of=/EMPTY bs=1M
-rm -f /EMPTY

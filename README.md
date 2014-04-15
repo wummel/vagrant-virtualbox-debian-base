@@ -70,6 +70,8 @@ The following variables are supported:
 
 * `SSHKEY` - path to custom public SSH key file to be copied into the installer CDROM at `/sshkey.pub`. Can be used by late_command.sh. Example: `~/.ssh/id_rsa.pub`;
 
+* `ANSIBLE_PLAYBOOK` - optional ansible playbook to run;
+
 
 ### Notes
 
