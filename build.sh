@@ -298,7 +298,7 @@ if [ -n "${ANSIBLE_PLAYBOOK}" ]; then
 
   ${STARTVM}
   echo "Waiting for VM ssh server "
-  while ! ansible all -i host.ini -m ping --user ${ANSIBLE_USER} >/dev/null; do
+  while ! ansible all -i host.ini -m ping --user ${ANSIBLE_USER} >/dev/null 2>&1; do
     sleep 1
     echo -n "."
   done
