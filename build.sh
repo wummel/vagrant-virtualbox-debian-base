@@ -317,6 +317,9 @@ if [ -n "${ANSIBLE_PLAYBOOK}" ]; then
     --medium emptydrive
 fi
 
+# Compact the .vdi
+VBoxManage modifyhd "${FOLDER_VBOX}/${BOX}/${BOX}.vdi" --compact
+
 echo "Building Vagrant Box ..."
 vagrant package --base "${BOX}" --output "${BOX}.box"
 
