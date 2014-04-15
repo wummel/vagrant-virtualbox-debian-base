@@ -24,8 +24,13 @@ set -o errexit
 
 # Env option: architecture
 ARCH=${ARCH:-amd64}
+# Env option: Debian CD image mirror
+DEBIAN_CDIMAGE=${DEBIAN_CDIMAGE:-cdimage.debian.org}
+
+DEBVER="7.4.0"
 BOX="debian-wheezy-${ARCH}"
-ISO_URL="http://cdimage.debian.org/debian-cd/7.4.0/${ARCH}/iso-cd/debian-7.4.0-${ARCH}-netinst.iso"
+ISO_FILE="debian-${DEBVER}-${ARCH}-netinst.iso"
+ISO_URL="http://${DEBIAN_CDIMAGE}/debian-cd/${DEBVER}/${ARCH}/iso-cd/${ISO_FILE}"
 if [ "$ARCH" = "amd64" ]; then
   ISO_MD5="e7e9433973f082a297793c3c5010b2c5"
 else

@@ -58,13 +58,15 @@ You can affect the default behaviour of the script using environment variables:
 
 The following variables are supported:
 
-* `ARCH`  _ Architecture to build. Either `i386` or `amd64`. Default is `amd64`.
+* `ARCH` - Architecture to build. Either `i386` or `amd64`. Default is `amd64`;
 
-* `PRESEED` — path to custom preseed file. May be useful when if you need some customizations for your private base box (user name, passwords etc.);
+* `DEBIAN_CDIMAGE` - Domain to download the Debian installer from. Default is `cdimage.debian.org`. Example:`ftp.de.debian.org`;
 
-* `LATE_CMD` — path to custom late_command.sh. May be useful when if you need some customizations for your private base box (user name, passwords etc.);
+* `PRESEED` - path to custom preseed file. May be useful when if you need some customizations for your private base box (user name, passwords etc.);
 
-* `VM_GUI` — if set to `yes` or `1`, disables headless mode for vm. May be useful for debugging installer;
+* `LATE_CMD` - path to custom late_command.sh. May be useful when if you need some customizations for your private base box (user name, passwords etc.);
+
+* `VM_GUI` - if set to `yes` or `1`, disables headless mode for vm. May be useful for debugging installer;
 
 
 ### Notes
