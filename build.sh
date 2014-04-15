@@ -38,7 +38,7 @@ else
 fi
 
 # location, location, location
-FOLDER_BASE=`pwd`
+FOLDER_BASE=$(pwd)
 FOLDER_ISO="${FOLDER_BASE}/iso"
 FOLDER_BUILD="${FOLDER_BASE}/build"
 FOLDER_VBOX="${FOLDER_BUILD}/vbox"
@@ -90,7 +90,7 @@ if [ -f "${FOLDER_BASE}/${BOX}.box" ]; then
   echo "Removing old ${BOX}.box" ...
   rm "${FOLDER_BASE}/${BOX}.box"
 fi
-if VBoxManage showvminfo "${BOX}" >/dev/null 2>/dev/null; then
+if VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
   echo "Unregistering vm ..."
   VBoxManage unregistervm "${BOX}" --delete
 fi
@@ -112,7 +112,7 @@ if [ ! -e "${ISO_FILENAME}" ]; then
 fi
 
 # make sure download is right...
-ISO_HASH=`$MD5 "${ISO_FILENAME}" | cut -d ' ' -f 1`
+ISO_HASH=$($MD5 "${ISO_FILENAME}" | cut -d ' ' -f 1)
 if [ "${ISO_MD5}" != "${ISO_HASH}" ]; then
   echo "ERROR: MD5 does not match. Got ${ISO_HASH} instead of ${ISO_MD5}. Aborting."
   exit 1
