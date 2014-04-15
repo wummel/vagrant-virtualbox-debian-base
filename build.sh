@@ -21,9 +21,16 @@ set -o errexit
 #set -o xtrace
 
 # Configurations
-BOX="debian-wheezy-64"
-ISO_URL="http://cdimage.debian.org/debian-cd/7.4.0/amd64/iso-cd/debian-7.4.0-amd64-netinst.iso"
-ISO_MD5="e7e9433973f082a297793c3c5010b2c5"
+
+# Env option: architecture
+ARCH=${ARCH:-amd64}
+BOX="debian-wheezy-${ARCH}"
+ISO_URL="http://cdimage.debian.org/debian-cd/7.4.0/${ARCH}/iso-cd/debian-7.4.0-${ARCH}-netinst.iso"
+if [ "$ARCH" = "amd64" ]; then
+  ISO_MD5="e7e9433973f082a297793c3c5010b2c5"
+else
+  ISO_MD5="7339b668a81b417ac023d73739dc6a03"
+fi
 
 # location, location, location
 FOLDER_BASE=`pwd`
@@ -173,7 +180,7 @@ echo "Creating VM Box..."
 if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>/dev/null; then
   VBoxManage createvm \
     --name "${BOX}" \
-    --ostype Debian_64 \
+    --ostype "Debian_${ARCH}" \
     --register \
     --basefolder "${FOLDER_VBOX}"
 

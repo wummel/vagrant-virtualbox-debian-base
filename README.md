@@ -2,9 +2,9 @@
 
 This script will:
 
- 1. download the `Debian 7.4 "Wheezy"` server, 64bit iso
+ 1. download the `Debian 7.4 "Wheezy"` server, 64bit or 32bit iso
  2. ... do some magic to turn it into a vagrant box file
- 3. output `debian-wheezy-64.box`
+ 3. output `debian-wheezy-i386.box` or `debian-wheezy-amd64.box`
 
 ## Requirements
 
@@ -22,9 +22,9 @@ This should do everything you need. If you don't have `mkisofs` or `p7zip`, inst
     brew install cdrtools
     brew install p7zip
 
-To add `debian-wheezy-64.box` with name `debian-wheezy` into vagrant:
+To add `debian-wheezy-amd64.box` with name `debian-wheezy` into vagrant:
 
-    vagrant box add "debian-wheezy" debian-wheezy-64.box
+    vagrant box add "debian-wheezy" debian-wheezy-amd64.box
 
 ## Usage on Linux
 
@@ -35,9 +35,9 @@ This should do everything you need. If you don't have `mkisofs` or `p7zip`:
     sudo apt-get install genisoimage
     sudo apt-get install p7zip-full
 
-To add `debian-wheezy-64.box` with name `debian-wheezy` into vagrant:
+To add `debian-wheezy-amd64.box` with name `debian-wheezy` into vagrant:
 
-    vagrant box add "debian-wheezy" debian-wheezy-64.box
+    vagrant box add "debian-wheezy" debian-wheezy-amd64.box
 
 ## Usage on Windows (under cygwin/git shell)
 
@@ -50,10 +50,6 @@ Tested under Windows 7 with this tools:
  * [7zip](http://www.7-zip.org/)
  * [mkisofs](http://sourceforge.net/projects/cdrtoolswin/)
 
-To add `debian-wheezy-64.box` with name `debian-wheezy` into vagrant:
-
-    vagrant box add "debian-wheezy" debian-wheezy-64.box
-
 ## Environment variables
 
 You can affect the default behaviour of the script using environment variables:
@@ -61,6 +57,8 @@ You can affect the default behaviour of the script using environment variables:
     VAR=value ./build.sh
 
 The following variables are supported:
+
+* `ARCH`  _ Architecture to build. Either `i386` or `amd64`. Default is `amd64`.
 
 * `PRESEED` — path to custom preseed file. May be useful when if you need some customizations for your private base box (user name, passwords etc.);
 
@@ -72,5 +70,3 @@ The following variables are supported:
 ### Notes
 
 This script basted on original Carl's [repo](https://github.com/cal/vagrant-ubuntu-precise-64) and with some tweaks to be compatible Debian 7.4.
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/dotzero/vagrant-debian-wheezy-64/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
