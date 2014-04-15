@@ -10,7 +10,7 @@ chmod 0600 /home/$DEPLOY_USER/.ssh/authorized_keys
 chown -R $DEPLOY_USER:$DEPLOY_USER /home/$DEPLOY_USER/.ssh
 
 # install sudo config
-cp "${BASEDIR}/${DEPLOY_USER}.sudo" /etc/sudoers.d/${DEPLOY_USER}
+cp "${BASEDIR}/user.sudo" /etc/sudoers.d/${DEPLOY_USER}
 chmod 0440 /etc/sudoers.d/${DEPLOY_USER}
 chown root:root /etc/sudoers.d/${DEPLOY_USER}
 

@@ -284,6 +284,7 @@ fi
 
 if [ -n "${ANSIBLE_PLAYBOOK}" ]; then
   # Run an ansible playbook with mounted VBox Guest Additions
+  echo "127.0.0.1:${ANSIBLE_SSHPORT}" > host.ini
 
   VBoxManage modifyvm "${BOX}" \
     --natpf1 "ssh,tcp,,${ANSIBLE_SSHPORT},,22"
@@ -303,7 +304,6 @@ if [ -n "${ANSIBLE_PLAYBOOK}" ]; then
   done
   echo ""
   echo "Running Ansible Playbook ..."
-  echo "127.0.0.1:${ANSIBLE_SSHPORT}" > host.ini
   ansible-playbook -i host.ini "${ANSIBLE_PLAYBOOK}"
 
   ${STOPVM}
