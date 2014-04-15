@@ -60,13 +60,15 @@ The following variables are supported:
 
 * `ARCH` - Architecture to build. Either `i386` or `amd64`. Default is `amd64`;
 
-* `DEBIAN_CDIMAGE` - Domain to download the Debian installer from. Default is `cdimage.debian.org`. Example:`ftp.de.debian.org`;
+* `DEBIAN_CDIMAGE` - Domain to download the Debian installer from. Default is `cdimage.debian.org`. Example: `ftp.de.debian.org`;
 
 * `PRESEED` - path to custom preseed file. May be useful when if you need some customizations for your private base box (user name, passwords etc.);
 
 * `LATE_CMD` - path to custom late_command.sh. May be useful when if you need some customizations for your private base box (user name, passwords etc.);
 
 * `VM_GUI` - if set to `yes` or `1`, disables headless mode for vm. May be useful for debugging installer;
+
+* `SSHKEY` - path to custom public SSH key file to be copied into the installer CDROM at `/sshkey.pub`. Can be used by late_command.sh. Example: `~/.ssh/id_rsa.pub`;
 
 
 ### Notes

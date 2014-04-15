@@ -37,6 +37,9 @@ else
   ISO_MD5="7339b668a81b417ac023d73739dc6a03"
 fi
 
+# Env option: local SSH pubkey
+SSHKEY="${SSHKEY:-}"
+
 # location, location, location
 FOLDER_BASE=$(pwd)
 FOLDER_ISO="${FOLDER_BASE}/iso"
@@ -176,6 +179,11 @@ if [ ! -e "${FOLDER_ISO}/custom.iso" ]; then
   echo "Add late_command script ..."
   chmod u+w "${FOLDER_ISO_CUSTOM}"
   cp "${LATE_CMD}" "${FOLDER_ISO_CUSTOM}/late_command.sh"
+
+  # add local ssh key
+  if [ -n "${SSHKEY}" ]; then
+    cp "${SSHKEY}" "${FOLDER_ISO_CUSTOM}/sshkey.pub"
+  fi
 
   echo "Running mkisofs ..."
   "$MKISOFS" -r -V "Custom Debian Install CD" \
