@@ -102,11 +102,11 @@ mkdir -p "${FOLDER_VBOX}"
 mkdir -p "${FOLDER_ISO_CUSTOM}"
 mkdir -p "${FOLDER_ISO_INITRD}"
 
-ISO_FILENAME="${FOLDER_ISO}/`basename ${ISO_URL}`"
+ISO_FILENAME="${FOLDER_ISO}/${ISO_FILE}"
 INITRD_FILENAME="${FOLDER_ISO}/initrd.gz"
 
 # download the installation disk if you haven't already or it is corrupted somehow
-echo "Downloading `basename ${ISO_URL}` ..."
+echo "Downloading ${ISO_FILE} ..."
 if [ ! -e "${ISO_FILENAME}" ]; then
   curl --output "${ISO_FILENAME}" -L "${ISO_URL}"
 fi
