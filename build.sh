@@ -33,8 +33,10 @@ ISO_FILE="debian-${DEBVER}-${ARCH}-netinst.iso"
 ISO_URL="http://${DEBIAN_CDIMAGE}/debian-cd/${DEBVER}/${ARCH}/iso-cd/${ISO_FILE}"
 if [ "$ARCH" = "amd64" ]; then
   ISO_MD5="e7e9433973f082a297793c3c5010b2c5"
+  VBOX_OSTYPE=Debian_64
 else
   ISO_MD5="7339b668a81b417ac023d73739dc6a03"
+  VBOX_OSTYPE=Debian
 fi
 
 # Env option: local SSH pubkey
@@ -218,7 +220,7 @@ echo "Creating VM Box..."
 if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>/dev/null; then
   VBoxManage createvm \
     --name "${BOX}" \
-    --ostype "Debian_${ARCH}" \
+    --ostype "${VBOX_OSTYPE}" \
     --register \
     --basefolder "${FOLDER_VBOX}"
 
