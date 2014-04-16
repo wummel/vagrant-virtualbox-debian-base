@@ -96,11 +96,11 @@ fi
 
 # start with a clean slate
 if VBoxManage list runningvms | grep "${BOX}" >/dev/null 2>&1; then
-  echo "Stopping vm ..."
+  echo "Stopping VM ..."
   ${STOPVM}
 fi
 if VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
-  echo "Unregistering vm ..."
+  echo "Unregistering VM ..."
   VBoxManage unregistervm "${BOX}" --delete
 fi
 if [ -f host.ini ]; then
@@ -306,6 +306,7 @@ if [ -n "${ANSIBLE_PLAYBOOK}" ]; then
   echo "Running Ansible Playbook ..."
   ansible-playbook -i host.ini "${ANSIBLE_PLAYBOOK}"
 
+  echo "Stopping VM ..."
   ${STOPVM}
 
   VBoxManage modifyvm "${BOX}" \
@@ -319,7 +320,7 @@ if [ -n "${ANSIBLE_PLAYBOOK}" ]; then
     --medium emptydrive
 fi
 
-# Compact the .vdi
+echo "Compacting the .vdi ..."
 VBoxManage modifyhd "${FOLDER_VBOX}/${BOX}/${BOX}.vdi" --compact
 
 echo "Building Vagrant Box ..."
