@@ -18,9 +18,11 @@ fi
 
 set -o nounset
 set -o errexit
+set -o pipefail
 #set -o xtrace
 
 # Configurations
+BASEDIR=$(dirname $0)
 
 # Env option: architecture
 ARCH=${ARCH:-amd64}
@@ -72,11 +74,11 @@ fi
 STOPVM="VBoxManage controlvm ${BOX} poweroff"
 
 # Env option: Use custom preseed.cfg or default
-DEFAULT_PRESEED="preseed.cfg"
+DEFAULT_PRESEED="${BASEDIR}/preseed.cfg"
 PRESEED="${PRESEED:-"$DEFAULT_PRESEED"}"
 
 # Env option: Use custom late_command.sh or default
-DEFAULT_LATE_CMD="${FOLDER_BASE}/late_command.sh"
+DEFAULT_LATE_CMD="${BASEDIR}/late_command.sh"
 LATE_CMD="${LATE_CMD:-"$DEFAULT_LATE_CMD"}"
 
 # Parameter changes from 4.2 to 4.3
@@ -188,7 +190,7 @@ if [ ! -e "${FOLDER_ISO}/custom.iso" ]; then
   cd "${FOLDER_BASE}"
   chmod u+w "${FOLDER_ISO_CUSTOM}/isolinux" "${FOLDER_ISO_CUSTOM}/isolinux/isolinux.cfg"
   rm "${FOLDER_ISO_CUSTOM}/isolinux/isolinux.cfg"
-  cp isolinux.cfg "${FOLDER_ISO_CUSTOM}/isolinux/isolinux.cfg"
+  cp ${BASEDIR}/isolinux.cfg "${FOLDER_ISO_CUSTOM}/isolinux/isolinux.cfg"
   chmod u+w "${FOLDER_ISO_CUSTOM}/isolinux/isolinux.bin"
 
   # add late_command script
@@ -204,7 +206,7 @@ if [ ! -e "${FOLDER_ISO}/custom.iso" ]; then
   fi
 
   # Add sudo config file
-  cp user.sudo "${FOLDER_ISO_CUSTOM}/user.sudo"
+  cp "${BASEDIR}/user.sudo" "${FOLDER_ISO_CUSTOM}/user.sudo"
 
   echo "Running mkisofs ..."
   "$MKISOFS" -r -V "Custom Debian Install CD" \
