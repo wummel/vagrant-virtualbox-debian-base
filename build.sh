@@ -29,15 +29,15 @@ ARCH=${ARCH:-amd64}
 # Env option: Debian CD image mirror
 DEBIAN_CDIMAGE=${DEBIAN_CDIMAGE:-cdimage.debian.org}
 
-DEBVER="7.4.0"
+DEBVER="7.5.0"
 BOX="debian-wheezy-${ARCH}"
 ISO_FILE="debian-${DEBVER}-${ARCH}-netinst.iso"
 ISO_URL="http://${DEBIAN_CDIMAGE}/debian-cd/${DEBVER}/${ARCH}/iso-cd/${ISO_FILE}"
 if [ "$ARCH" = "amd64" ]; then
-  ISO_MD5="e7e9433973f082a297793c3c5010b2c5"
+  ISO_MD5="8fdb6715228ea90faba58cb84644d296"
   VBOX_OSTYPE=Debian_64
 else
-  ISO_MD5="7339b668a81b417ac023d73739dc6a03"
+  ISO_MD5="0e6eaacb5a5828473afe90f6df9c8f16"
   VBOX_OSTYPE=Debian
 fi
 
