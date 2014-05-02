@@ -50,7 +50,7 @@ if [ -n "$ANSIBLE_PLAYBOOK" ]; then
   hash ansible-playbook 2>/dev/null || { echo >&2 "ERROR: ansible-playbook not found. Aborting."; exit 1; }
 fi
 # Env option: local SSH port for ansible
-ANSIBLE_SSHPORT="${ANSIBLE_SSHPORT:2222}"
+ANSIBLE_SSHPORT="${ANSIBLE_SSHPORT:-2222}"
 # local SSH user for ansible
 ANSIBLE_USER="deploy"
 # Guest additions ISO on the host system
