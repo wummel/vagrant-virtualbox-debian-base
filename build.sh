@@ -50,7 +50,7 @@ if [ -n "$ANSIBLE_PLAYBOOK" ]; then
   hash ansible-playbook 2>/dev/null || { echo >&2 "ERROR: ansible-playbook not found. Aborting."; exit 1; }
 fi
 # Env option: local SSH port for ansible
-ANSIBLE_SSHPORT="2222"
+ANSIBLE_SSHPORT="${ANSIBLE_SSHPORT:2222}"
 # local SSH user for ansible
 ANSIBLE_USER="deploy"
 # Guest additions ISO on the host system
@@ -285,12 +285,17 @@ if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>/dev/null; then
 fi
 
 if [ -n "${ANSIBLE_PLAYBOOK}" ]; then
-  # Run an ansible playbook with mounted VBox Guest Additions
+  # Run an ansible playbook
   echo "127.0.0.1:${ANSIBLE_SSHPORT}" > host.ini
 
+  # if ansible has errors, login to the runnig box with:
+  # ssh -p ${ANSIBLE_SSHPORT} ${ANSIBLE_USER}@localhost
+  # and inspect the machine.
+  # See above for definitions of ANSIBLE_SSHPORT and ANSIBLE_USER.
   VBoxManage modifyvm "${BOX}" \
     --natpf1 "ssh,tcp,,${ANSIBLE_SSHPORT},,22"
 
+  # mount VBox Guest Additions to allow install or upgrade with ansible
   VBoxManage storageattach "${BOX}" \
     --storagectl "IDE Controller" \
     --port 1 \

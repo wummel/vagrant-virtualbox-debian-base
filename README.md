@@ -58,21 +58,27 @@ You can affect the default behaviour of the script using environment variables:
 
 The following variables are supported:
 
-* `ARCH` - Architecture to build. Either `i386` or `amd64`. Default is `amd64`;
+* `ARCH` - Architecture to build. Either `i386` or `amd64`. Default is `amd64`.
 
-* `DEBIAN_CDIMAGE` - Domain to download the Debian installer from. Default is `cdimage.debian.org`. Example: `ftp.de.debian.org`;
+* `DEBIAN_CDIMAGE` - Domain to download the Debian installer from. Default is `cdimage.debian.org`. Example: `ftp.de.debian.org`.
 
-* `PRESEED` - path to custom preseed file. May be useful when if you need some customizations for your private base box (user name, passwords etc.);
+* `PRESEED` - Path to custom preseed file. May be useful when if you need some customizations for your private base box (user name, passwords etc.).
 
-* `LATE_CMD` - path to custom late_command.sh. May be useful when if you need some customizations for your private base box (user name, passwords etc.);
+* `LATE_CMD` - Path to custom late_command.sh. May be useful when if you need some customizations for your private base box (user name, passwords etc.).
 
-* `VM_GUI` - if set to `yes` or `1`, disables headless mode for vm. May be useful for debugging installer;
+* `VM_GUI` - If set to `yes` or `1`, disables headless mode for vm. May be useful for debugging installer.
 
-* `SSHKEY` - path to custom public SSH key file to be copied into the installer CDROM at `/sshkey.pub`. Can be used by late_command.sh. Example: `~/.ssh/id_rsa.pub`;
+* `SSHKEY` - Path to custom public SSH key file to be copied into the installer CDROM at `/sshkey.pub`. Can be used by late_command.sh. Example: `~/.ssh/id_rsa.pub`.
 
-* `ANSIBLE_PLAYBOOK` - optional ansible playbook to run;
+* `ANSIBLE_PLAYBOOK` - Optional ansible playbook to run.
+
+* `ANSIBLE_SSHPORT` - Optional the SSH port for ansible. Default is `2222`.
+
 
 
 ### Notes
 
-This script basted on original Carl's [repo](https://github.com/cal/vagrant-ubuntu-precise-64) and with some tweaks to be compatible Debian 7.4.
+When the ansible playbook has errors, login to the running machine with
+`ssh -p ${ANSIBLE_SSHPORT} deploy@localhost` for inspection or debugging.
+
+This script is based on original Carl's [repo](https://github.com/cal/vagrant-ubuntu-precise-64) and with some tweaks to be Debian compatible.
