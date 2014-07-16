@@ -2,7 +2,7 @@
 
 This script will:
 
- 1. download the `Debian 7.5 "Wheezy"` server, 64bit or 32bit iso
+ 1. download the `Debian 7.6 "Wheezy"` server, 64bit or 32bit iso
  2. ... do some magic to turn it into a vagrant box file
  3. output `debian-wheezy-i386.box` or `debian-wheezy-amd64.box`
 
