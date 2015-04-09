@@ -24,20 +24,24 @@ set -o pipefail
 # Configurations
 BASEDIR=$(dirname $0)
 
-# Env option: architecture
+# Env option: architecture (i386 or amd64)
 ARCH=${ARCH:-amd64}
 # Env option: Debian CD image mirror
 DEBIAN_CDIMAGE=${DEBIAN_CDIMAGE:-cdimage.debian.org}
 
+# For current available CD images see http://cdimage.debian.org/debian-cd/
 DEBVER="7.8.0"
 BOX="debian-wheezy-${ARCH}"
 ISO_FILE="debian-${DEBVER}-${ARCH}-netinst.iso"
-ISO_URL="http://${DEBIAN_CDIMAGE}/debian-cd/${DEBVER}/${ARCH}/iso-cd/${ISO_FILE}"
+ISO_BASEURL="http://${DEBIAN_CDIMAGE}/debian-cd/${DEBVER}/${ARCH}/iso-cd"
+ISO_URL="${ISO_BASEURL}/${ISO_FILE}"
+ISO_MD5URL="${ISO_BASEURL}/MD5SUMS"
+# fetch MD5 hash
+ISO_MD5="$(curl -s $ISO_MD5URL | grep " $ISO_FILE" | cut -f1 -d" ")"
+# Map architecture to VirtualBox OS type
 if [ "$ARCH" = "amd64" ]; then
-  ISO_MD5="a91fba5001cf0fbccb44a7ae38c63b6e"
   VBOX_OSTYPE=Debian_64
 else
-  ISO_MD5="0d2f88d23a9d5945f5bc0276830c7d2c"
   VBOX_OSTYPE=Debian
 fi
 
