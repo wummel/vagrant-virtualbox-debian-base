@@ -2,9 +2,9 @@
 
 This script will:
 
- 1. download the `Debian 7.8 "Wheezy"` server, 64bit or 32bit iso
+ 1. download the `Debian 8 "Jessie"` server, 64bit or 32bit iso
  2. ... do some magic to turn it into a vagrant box file
- 3. output `debian-wheezy-i386.box` or `debian-wheezy-amd64.box`
+ 3. output `debian-jessie-i386.box` or `debian-jessie-amd64.box`
 
 ## Requirements
 
@@ -12,6 +12,11 @@ This script will:
  * Vagrant
  * mkisofs
  * 7zip
+
+## Configuration
+
+ 1. set the password or MD5 hash of the deploy user in preseed.cfg
+ 2. optional: adjust locale of timezone values in preseed.cfg
 
 ## Usage on OSX
 
@@ -22,9 +27,9 @@ This should do everything you need. If you don't have `mkisofs` or `p7zip`, inst
     brew install cdrtools
     brew install p7zip
 
-To add `debian-wheezy-amd64.box` with name `debian-wheezy` into vagrant:
+To add `debian-jessie-amd64.box` with name `debian-jessie` into vagrant:
 
-    vagrant box add "debian-wheezy" debian-wheezy-amd64.box
+    vagrant box add "debian-jessie" debian-jessie-amd64.box
 
 ## Usage on Linux
 
@@ -35,9 +40,9 @@ This should do everything you need. If you don't have `mkisofs` or `p7zip`:
     sudo apt-get install genisoimage
     sudo apt-get install p7zip-full
 
-To add `debian-wheezy-amd64.box` with name `debian-wheezy` into vagrant:
+To add `debian-jessie-amd64.box` with name `debian-jessie` into vagrant:
 
-    vagrant box add "debian-wheezy" debian-wheezy-amd64.box
+    vagrant box add "debian-jessie" debian-jessie-amd64.box
 
 ## Usage on Windows (under cygwin/git shell)
 
