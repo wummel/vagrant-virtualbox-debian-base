@@ -1,27 +1,13 @@
 #!/bin/bash
 
-# make sure we have dependencies
-hash vagrant 2>/dev/null || { echo >&2 "ERROR: vagrant not found.  Aborting."; exit 1; }
-hash VBoxManage 2>/dev/null || { echo >&2 "ERROR: VBoxManage not found.  Aborting."; exit 1; }
-hash 7z 2>/dev/null || { echo >&2 "ERROR: 7z not found. Aborting."; exit 1; }
-
-VBOX_VERSION="$(VBoxManage --version)"
-
-if hash mkisofs 2>/dev/null; then
-  MKISOFS="$(which mkisofs)"
-elif hash genisoimage 2>/dev/null; then
-  MKISOFS="$(which genisoimage)"
-else
-  echo >&2 "ERROR: mkisofs or genisoimage not found.  Aborting."
-  exit 1
-fi
-
+### set bash options ###
 set -o nounset
 set -o errexit
 set -o pipefail
+# for debugging
 #set -o xtrace
 
-# Configurations
+### Configuration ###
 BASEDIR=$(dirname $0)
 
 # Env option: architecture (i386 or amd64)
@@ -35,9 +21,6 @@ BOX="debian-jessie-${ARCH}"
 ISO_FILE="debian-${DEBVER}-${ARCH}-netinst.iso"
 ISO_BASEURL="http://${DEBIAN_CDIMAGE}/debian-cd/${DEBVER}/${ARCH}/iso-cd"
 ISO_URL="${ISO_BASEURL}/${ISO_FILE}"
-ISO_MD5URL="${ISO_BASEURL}/MD5SUMS"
-# fetch MD5 hash
-ISO_MD5="$(curl -s $ISO_MD5URL | grep " $ISO_FILE" | cut -f1 -d" ")"
 # Map architecture to VirtualBox OS type
 if [ "$ARCH" = "amd64" ]; then
   VBOX_OSTYPE=Debian_64
@@ -50,9 +33,6 @@ SSHKEY="${SSHKEY:-}"
 
 # Env option: optionally run ansible playbook
 ANSIBLE_PLAYBOOK="${ANSIBLE_PLAYBOOK:-}"
-if [ -n "$ANSIBLE_PLAYBOOK" ]; then
-  hash ansible-playbook 2>/dev/null || { echo >&2 "ERROR: ansible-playbook not found. Aborting."; exit 1; }
-fi
 # Env option: local SSH port for ansible
 ANSIBLE_SSHPORT="${ANSIBLE_SSHPORT:-2222}"
 # local SSH user for ansible
@@ -85,20 +65,66 @@ PRESEED="${PRESEED:-"$DEFAULT_PRESEED"}"
 DEFAULT_LATE_CMD="${BASEDIR}/late_command.sh"
 LATE_CMD="${LATE_CMD:-"$DEFAULT_LATE_CMD"}"
 
+### check dependencies ###
+# basic programs
+hash curl 2>/dev/null || { echo >&2 "ERROR: curl not found. Aborting."; exit 1; }
+hash vagrant 2>/dev/null || { echo >&2 "ERROR: vagrant not found. Aborting."; exit 1; }
+hash VBoxManage 2>/dev/null || { echo >&2 "ERROR: VBoxManage not found. Aborting."; exit 1; }
+hash 7z 2>/dev/null || { echo >&2 "ERROR: 7z not found. Aborting."; exit 1; }
+# cd image generation program
+if hash mkisofs 2>/dev/null; then
+  MKISOFS="$(which mkisofs)"
+elif hash genisoimage 2>/dev/null; then
+  MKISOFS="$(which genisoimage)"
+else
+  echo >&2 "ERROR: mkisofs or genisoimage not found. Aborting."
+  exit 1
+fi
+# hash check program; prefer sha256 over sha1 over md5
+if hash sha256sum 2>/dev/null; then
+  HASH_PROG=sha256sum
+  HASH_FILE=SHA256SUMS
+elif hash sha1sum 2>/dev/null; then
+  HASH_PROG=sha1sum
+  HASH_FILE=SHA1SUMS
+elif hash md5sum 2>/dev/null; then
+  HASH_PROG=md5sum
+  HASH_FILE=MD5SUMS
+else
+  echo >&2 "ERROR: sha256sum or sha1sum or md5sum not found. Aborting."
+  exit 1
+fi
+
+if [ ! -f "$VBOX_GUEST_ADDITIONS" ]; then
+  echo >&2 "ERROR: VirtualBox guest addition file $VBOX_GUEST_ADDITIONS not found. Aborting."
+  exit 1
+fi
+
+if [ -n "$ANSIBLE_PLAYBOOK" ]; then
+  if ! hash ansible-playbook 2>/dev/null; then
+    echo >&2 "ERROR: ansible-playbook not found. Aborting."
+    exit 1
+  fi
+fi
 # Parameter changes from 4.2 to 4.3
-if [[ "$VBOX_VERSION" < 4.3 ]]; then
+if [[ "$(VBoxManage --version)" < 4.3 ]]; then
   PORTCOUNT="--sataportcount 1"
 else
   PORTCOUNT="--portcount 1"
 fi
 
-if [ "$OSTYPE" = "linux-gnu" ]; then
-  MD5="md5sum"
-elif [ "$OSTYPE" = "msys" ]; then
-  MD5="md5 -l"
-else
-  MD5="md5 -q"
-fi
+### helper functions ###
+function cleanup {
+  if [ -d "${FOLDER_BUILD}" ]; then
+    echo "Cleaning build directory ..."
+    chmod -R u+w "${FOLDER_BUILD}"
+    rm -rf "${FOLDER_BUILD}"
+  fi
+}
+
+trap 'cleanup' EXIT
+
+### main function ###
 
 # start with a clean slate
 if VBoxManage list runningvms | grep "${BOX}" >/dev/null 2>&1; then
@@ -112,11 +138,7 @@ fi
 if [ -f host.ini ]; then
   rm host.ini
 fi
-if [ -d "${FOLDER_BUILD}" ]; then
-  echo "Cleaning build directory ..."
-  chmod -R u+w "${FOLDER_BUILD}"
-  rm -rf "${FOLDER_BUILD}"
-fi
+cleanup
 if [ -f "${FOLDER_ISO}/custom.iso" ]; then
   echo "Removing custom iso ..."
   rm "${FOLDER_ISO}/custom.iso"
@@ -134,18 +156,37 @@ mkdir -p "${FOLDER_ISO_CUSTOM}"
 mkdir -p "${FOLDER_ISO_INITRD}"
 
 ISO_FILENAME="${FOLDER_ISO}/${ISO_FILE}"
+HASH_FILENAME="${FOLDER_ISO}/${HASH_FILE}"
+HASHSIGN_FILENAME="${FOLDER_ISO}/${HASH_FILE}.sign"
 INITRD_FILENAME="${FOLDER_ISO}/initrd.gz"
 
-# download the installation disk if you haven't already or it is corrupted somehow
-echo "Downloading ${ISO_FILE} ..."
+# download the installation disk
 if [ ! -e "${ISO_FILENAME}" ]; then
+  echo "Downloading ${ISO_FILE} ..."
   curl --output "${ISO_FILENAME}" -L "${ISO_URL}"
 fi
 
+echo "Verifying ${ISO_FILE} ..."
 # make sure download is right...
-ISO_HASH=$($MD5 "${ISO_FILENAME}" | cut -d ' ' -f 1)
-if [ "${ISO_MD5}" != "${ISO_HASH}" ]; then
-  echo "ERROR: MD5 does not match. Got ${ISO_HASH} instead of ${ISO_MD5}. Aborting."
+# fetch hash and signature file
+ISO_HASHURL="${ISO_BASEURL}/${HASH_FILE}"
+ISO_HASHSIGNURL="${ISO_HASHURL}.sign"
+curl -sS -o "${HASH_FILENAME}" "${ISO_HASHURL}"
+# check signature if gpg is available
+if hash gpg 2>/dev/null; then
+  # note: the key is hardcoded, this might change in the future
+  gpg --keyserver hkp://keyring.debian.org --recv-keys 0x6294BE9B
+  curl -sS --output "${HASHSIGN_FILENAME}" -L "${ISO_HASHSIGNURL}"
+  gpg --verify "${HASHSIGN_FILENAME}" "${HASH_FILENAME}"
+  rm -f "${HASHSIGN_FILENAME}"
+else
+  echo "INFO: gpg binary not found - skipping signature check"
+fi
+ISO_HASH="$(cat "${HASH_FILENAME}" | grep " $ISO_FILE" | cut -f1 -d" ")"
+rm -f "${HASH_FILENAME}"
+ISO_HASH_CALCULATED=$($HASH_PROG "${ISO_FILENAME}" | cut -d ' ' -f 1)
+if [ "${ISO_HASH_CALCULATED}" != "${ISO_HASH}" ]; then
+  echo >&2 "ERROR: hash from $HASH_PROG does not match. Got ${ISO_HASH_CALCULATED} instead of ${ISO_HASH}. Aborting."
   exit 1
 fi
 
@@ -154,10 +195,8 @@ echo "Creating Custom ISO"
 if [ ! -e "${FOLDER_ISO}/custom.iso" ]; then
 
   echo "Using 7zip"
-  7z x "${ISO_FILENAME}" -o"${FOLDER_ISO_CUSTOM}"
-
-  # If that didn't work, you have to update p7zip
-  if [ ! -e $FOLDER_ISO_CUSTOM ]; then
+  if ! 7z x "${ISO_FILENAME}" -o"${FOLDER_ISO_CUSTOM}"; then
+    # If that didn't work, you have to update p7zip
     echo "Error with extracting the ISO file with your version of p7zip. Try updating to the latest version."
     exit 1
   fi
