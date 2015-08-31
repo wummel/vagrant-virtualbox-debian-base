@@ -68,6 +68,7 @@ LATE_CMD="${LATE_CMD:-"$DEFAULT_LATE_CMD"}"
 ### check dependencies ###
 # basic programs
 hash curl 2>/dev/null || { echo >&2 "ERROR: curl not found. Aborting."; exit 1; }
+hash cpio 2>/dev/null || { echo >&2 "ERROR: cpio not found. Aborting."; exit 1; }
 hash vagrant 2>/dev/null || { echo >&2 "ERROR: vagrant not found. Aborting."; exit 1; }
 hash VBoxManage 2>/dev/null || { echo >&2 "ERROR: VBoxManage not found. Aborting."; exit 1; }
 hash 7z 2>/dev/null || { echo >&2 "ERROR: 7z not found. Aborting."; exit 1; }
@@ -171,7 +172,11 @@ echo "Verifying ${ISO_FILE} ..."
 # fetch hash and signature file
 ISO_HASHURL="${ISO_BASEURL}/${HASH_FILE}"
 ISO_HASHSIGNURL="${ISO_HASHURL}.sign"
-curl -sS -o "${HASH_FILENAME}" "${ISO_HASHURL}"
+if [ ! -e "${ISO_HASHFILENAME}" ]; then
+  echo "Downloading ${ISO_HASHFILE} ..."
+  # use -sS silent options since the download is very small
+  curl -sS --output "${HASH_FILENAME}" -L "${ISO_HASHURL}"
+fi
 # check signature if gpg is available
 if hash gpg 2>/dev/null; then
   # note: the key is hardcoded, this might change in the future
@@ -183,7 +188,6 @@ else
   echo "INFO: gpg binary not found - skipping signature check"
 fi
 ISO_HASH="$(cat "${HASH_FILENAME}" | grep " $ISO_FILE" | cut -f1 -d" ")"
-rm -f "${HASH_FILENAME}"
 ISO_HASH_CALCULATED=$($HASH_PROG "${ISO_FILENAME}" | cut -d ' ' -f 1)
 if [ "${ISO_HASH_CALCULATED}" != "${ISO_HASH}" ]; then
   echo >&2 "ERROR: hash from $HASH_PROG does not match. Got ${ISO_HASH_CALCULATED} instead of ${ISO_HASH}. Aborting."
@@ -252,7 +256,7 @@ if [ ! -e "${FOLDER_ISO}/custom.iso" ]; then
   cp "${BASEDIR}/user.sudo" "${FOLDER_ISO_CUSTOM}/user.sudo"
 
   echo "Running mkisofs ..."
-  "$MKISOFS" -r -V "Custom Debian Install CD" \
+  "$MKISOFS" -r -V "Custom Debian $DEBVER $ARCH Install CD" \
     -cache-inodes -quiet \
     -J -l -b isolinux/isolinux.bin \
     -c isolinux/boot.cat -no-emul-boot \
