@@ -21,6 +21,9 @@ BOX="debian-jessie-${ARCH}"
 ISO_FILE="debian-${DEBVER}-${ARCH}-netinst.iso"
 ISO_BASEURL="http://${DEBIAN_CDIMAGE}/debian-cd/${DEBVER}/${ARCH}/iso-cd"
 ISO_URL="${ISO_BASEURL}/${ISO_FILE}"
+# GPG verification key for signed hash file
+# note: the key is hardcoded, this might change in the future
+GPG_KEY=0x6294BE9B
 # Map architecture to VirtualBox OS type
 if [ "$ARCH" = "amd64" ]; then
   VBOX_OSTYPE=Debian_64
@@ -158,7 +161,8 @@ mkdir -p "${FOLDER_ISO_INITRD}"
 
 ISO_FILENAME="${FOLDER_ISO}/${ISO_FILE}"
 HASH_FILENAME="${FOLDER_ISO}/${HASH_FILE}"
-HASHSIGN_FILENAME="${FOLDER_ISO}/${HASH_FILE}.sign"
+HASHSIGN_FILE="${HASH_FILE}.sign"
+HASHSIGN_FILENAME="${FOLDER_ISO}/${HASHSIGN_FILE}"
 INITRD_FILENAME="${FOLDER_ISO}/initrd.gz"
 
 # download the installation disk
@@ -172,16 +176,18 @@ echo "Verifying ${ISO_FILE} ..."
 # fetch hash and signature file
 ISO_HASHURL="${ISO_BASEURL}/${HASH_FILE}"
 ISO_HASHSIGNURL="${ISO_HASHURL}.sign"
-if [ ! -e "${ISO_HASHFILENAME}" ]; then
-  echo "Downloading ${ISO_HASHFILE} ..."
+if [ ! -e "${HASH_FILENAME}" ]; then
+  echo "Downloading ${HASH_FILE} ..."
   # use -sS silent options since the download is very small
   curl -sS --output "${HASH_FILENAME}" -L "${ISO_HASHURL}"
 fi
 # check signature if gpg is available
 if hash gpg 2>/dev/null; then
-  # note: the key is hardcoded, this might change in the future
-  gpg --keyserver hkp://keyring.debian.org --recv-keys 0x6294BE9B
+  echo "Downloading ${HASHSIGN_FILE} ..."
   curl -sS --output "${HASHSIGN_FILENAME}" -L "${ISO_HASHSIGNURL}"
+  echo "Get GPG key ${GPG_KEY} ..."
+  gpg --keyserver hkp://keyring.debian.org --recv-keys ${GPG_KEY}
+  echo "Verify GPG key ..."
   gpg --verify "${HASHSIGN_FILENAME}" "${HASH_FILENAME}"
   rm -f "${HASHSIGN_FILENAME}"
 else
