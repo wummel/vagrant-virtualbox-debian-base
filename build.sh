@@ -16,7 +16,7 @@ ARCH=${ARCH:-amd64}
 DEBIAN_CDIMAGE=${DEBIAN_CDIMAGE:-cdimage.debian.org}
 
 # For current available CD images see http://cdimage.debian.org/debian-cd/
-DEBVER="8.1.0"
+DEBVER="8.2.0"
 BOX="debian-jessie-${ARCH}"
 ISO_FILE="debian-${DEBVER}-${ARCH}-netinst.iso"
 ISO_BASEURL="http://${DEBIAN_CDIMAGE}/debian-cd/${DEBVER}/${ARCH}/iso-cd"
