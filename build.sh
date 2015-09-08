@@ -168,7 +168,7 @@ INITRD_FILENAME="${FOLDER_ISO}/initrd.gz"
 # download the installation disk
 if [ ! -e "${ISO_FILENAME}" ]; then
   echo "Downloading ${ISO_FILE} ..."
-  curl --output "${ISO_FILENAME}" -L "${ISO_URL}"
+  curl --fail --output "${ISO_FILENAME}" -L "${ISO_URL}"
 fi
 
 echo "Verifying ${ISO_FILE} ..."
@@ -179,12 +179,12 @@ ISO_HASHSIGNURL="${ISO_HASHURL}.sign"
 if [ ! -e "${HASH_FILENAME}" ]; then
   echo "Downloading ${HASH_FILE} ..."
   # use -sS silent options since the download is very small
-  curl -sS --output "${HASH_FILENAME}" -L "${ISO_HASHURL}"
+  curl --fail -sS --output "${HASH_FILENAME}" -L "${ISO_HASHURL}"
 fi
 # check signature if gpg is available
 if hash gpg 2>/dev/null; then
   echo "Downloading ${HASHSIGN_FILE} ..."
-  curl -sS --output "${HASHSIGN_FILENAME}" -L "${ISO_HASHSIGNURL}"
+  curl --fail -sS --output "${HASHSIGN_FILENAME}" -L "${ISO_HASHSIGNURL}"
   echo "Get GPG key ${GPG_KEY} ..."
   gpg --keyserver hkp://keyring.debian.org --recv-keys ${GPG_KEY}
   echo "Verify GPG key ..."
@@ -255,7 +255,7 @@ if [ ! -e "${FOLDER_ISO}/custom.iso" ]; then
   if [ -n "${SSHKEY}" ]; then
     cp "${SSHKEY}" "${FOLDER_ISO_CUSTOM}/sshkey.pub"
   else
-    curl --output "${FOLDER_ISO_CUSTOM}/sshkey.pub" "https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub"
+    curl --fail --output "${FOLDER_ISO_CUSTOM}/sshkey.pub" "https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub"
   fi
 
   # Add sudo config file
