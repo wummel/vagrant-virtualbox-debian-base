@@ -262,7 +262,7 @@ if [ ! -e "${FOLDER_ISO}/custom.iso" ]; then
   cp "${BASEDIR}/user.sudo" "${FOLDER_ISO_CUSTOM}/user.sudo"
 
   echo "Running mkisofs ..."
-  "$MKISOFS" -r -V "Custom Debian $DEBVER $ARCH Install CD" \
+  "$MKISOFS" -r -V "Custom Debian $DEBVER $ARCH CD" \
     -cache-inodes -quiet \
     -J -l -b isolinux/isolinux.bin \
     -c isolinux/boot.cat -no-emul-boot \
