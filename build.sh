@@ -7,6 +7,62 @@ set -o pipefail
 # for debugging
 #set -o xtrace
 
+
+### Check dependencies ###
+
+# basic programs
+hash curl 2>/dev/null || { echo >&2 "ERROR: curl not found. Aborting."; exit 1; }
+hash grep 2>/dev/null || { echo >&2 "ERROR: grep not found. Aborting."; exit 1; }
+hash sed 2>/dev/null || { echo >&2 "ERROR: sed not found. Aborting."; exit 1; }
+hash cpio 2>/dev/null || { echo >&2 "ERROR: cpio not found. Aborting."; exit 1; }
+hash vagrant 2>/dev/null || { echo >&2 "ERROR: vagrant not found. Aborting."; exit 1; }
+hash 7z 2>/dev/null || { echo >&2 "ERROR: 7z not found. Aborting."; exit 1; }
+# cd image generation program
+if hash mkisofs 2>/dev/null; then
+  MKISOFS="$(which mkisofs)"
+elif hash genisoimage 2>/dev/null; then
+  MKISOFS="$(which genisoimage)"
+else
+  echo >&2 "ERROR: mkisofs or genisoimage not found. Aborting."
+  exit 1
+fi
+# hash check program; prefer sha256 over sha1 over md5
+if hash sha256sum 2>/dev/null; then
+  HASH_PROG=sha256sum
+  HASH_FILE=SHA256SUMS
+elif hash sha1sum 2>/dev/null; then
+  HASH_PROG=sha1sum
+  HASH_FILE=SHA1SUMS
+elif hash md5sum 2>/dev/null; then
+  HASH_PROG=md5sum
+  HASH_FILE=MD5SUMS
+else
+  echo >&2 "ERROR: sha256sum or sha1sum or md5sum not found. Aborting."
+  exit 1
+fi
+# VirtualBox
+hash VBoxManage 2>/dev/null || { echo >&2 "ERROR: VBoxManage not found. Aborting."; exit 1; }
+# Guest additions ISO on the host system
+VBOX_GUEST_ADDITIONS=/usr/share/virtualbox/VBoxGuestAdditions.iso
+if [ ! -f "$VBOX_GUEST_ADDITIONS" ]; then
+  echo >&2 "ERROR: VirtualBox guest addition file $VBOX_GUEST_ADDITIONS not found. Aborting."
+  exit 1
+fi
+# Parameter changes from 4.2 to 4.3
+if [[ "$(VBoxManage --version)" < 4.3 ]]; then
+  PORTCOUNT="--sataportcount 1"
+else
+  PORTCOUNT="--portcount 1"
+fi
+# ansible
+if [ -n "$ANSIBLE_PLAYBOOK" ]; then
+  if ! hash ansible-playbook 2>/dev/null; then
+    echo >&2 "ERROR: ansible-playbook not found. Aborting."
+    exit 1
+  fi
+fi
+
+
 ### Configuration ###
 BASEDIR=$(dirname $0)
 
@@ -80,57 +136,6 @@ PRESEED="${PRESEED:-"$DEFAULT_PRESEED"}"
 # Env option: Use custom late_command.sh or default
 DEFAULT_LATE_CMD="${BASEDIR}/late_command.sh"
 LATE_CMD="${LATE_CMD:-"$DEFAULT_LATE_CMD"}"
-
-### check dependencies ###
-# basic programs
-hash curl 2>/dev/null || { echo >&2 "ERROR: curl not found. Aborting."; exit 1; }
-hash cpio 2>/dev/null || { echo >&2 "ERROR: cpio not found. Aborting."; exit 1; }
-hash vagrant 2>/dev/null || { echo >&2 "ERROR: vagrant not found. Aborting."; exit 1; }
-hash 7z 2>/dev/null || { echo >&2 "ERROR: 7z not found. Aborting."; exit 1; }
-# cd image generation program
-if hash mkisofs 2>/dev/null; then
-  MKISOFS="$(which mkisofs)"
-elif hash genisoimage 2>/dev/null; then
-  MKISOFS="$(which genisoimage)"
-else
-  echo >&2 "ERROR: mkisofs or genisoimage not found. Aborting."
-  exit 1
-fi
-# hash check program; prefer sha256 over sha1 over md5
-if hash sha256sum 2>/dev/null; then
-  HASH_PROG=sha256sum
-  HASH_FILE=SHA256SUMS
-elif hash sha1sum 2>/dev/null; then
-  HASH_PROG=sha1sum
-  HASH_FILE=SHA1SUMS
-elif hash md5sum 2>/dev/null; then
-  HASH_PROG=md5sum
-  HASH_FILE=MD5SUMS
-else
-  echo >&2 "ERROR: sha256sum or sha1sum or md5sum not found. Aborting."
-  exit 1
-fi
-# VirtualBox
-hash VBoxManage 2>/dev/null || { echo >&2 "ERROR: VBoxManage not found. Aborting."; exit 1; }
-# Guest additions ISO on the host system
-VBOX_GUEST_ADDITIONS=/usr/share/virtualbox/VBoxGuestAdditions.iso
-if [ ! -f "$VBOX_GUEST_ADDITIONS" ]; then
-  echo >&2 "ERROR: VirtualBox guest addition file $VBOX_GUEST_ADDITIONS not found. Aborting."
-  exit 1
-fi
-# Parameter changes from 4.2 to 4.3
-if [[ "$(VBoxManage --version)" < 4.3 ]]; then
-  PORTCOUNT="--sataportcount 1"
-else
-  PORTCOUNT="--portcount 1"
-fi
-# ansible
-if [ -n "$ANSIBLE_PLAYBOOK" ]; then
-  if ! hash ansible-playbook 2>/dev/null; then
-    echo >&2 "ERROR: ansible-playbook not found. Aborting."
-    exit 1
-  fi
-fi
 
 ### helper functions ###
 function cleanup {
@@ -286,7 +291,7 @@ fi
 
 if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>/dev/null; then
   # create virtual machine
-  echo "Creating VM Box..."
+  echo "Creating VM Box ${BOX}..."
   VBoxManage createvm \
     --name "${BOX}" \
     --ostype "${VBOX_OSTYPE}" \
