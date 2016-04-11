@@ -1,4 +1,11 @@
 #!/bin/bash
+#This script will:
+#
+# 1. download and verify the latest Debian 8 "Jessie" CD image
+# 2. ... do some magic to turn it into a vagrant box file
+# 3. output debian-jessie-i386.box or debian-jessie-amd64.box
+#
+# See README.md for more info
 
 ### set bash options ###
 set -o nounset
@@ -289,7 +296,7 @@ if [ ! -e "${FOLDER_ISO}/custom.iso" ]; then
     -o "${FOLDER_ISO}/custom.iso" "${FOLDER_ISO_CUSTOM}"
 fi
 
-if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>/dev/null; then
+if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
   # create virtual machine
   echo "Creating VM Box ${BOX}..."
   VBoxManage createvm \
