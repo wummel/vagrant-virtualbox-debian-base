@@ -30,33 +30,12 @@ ISO_URL="${ISO_BASEURL}/${ISO_FILE}"
 # GPG verification key for signed hash file from https://www.debian.org/CD/verify
 # note: the key is hardcoded, this might change in the future
 GPG_KEY="DF9B 9C49 EAA9 2984 3258  9D76 DA87 E80D 6294 BE9B"
-# Map architecture to VirtualBox OS type
+# Map Debian architecture to VirtualBox OS type
 if [ "$ARCH" = "amd64" ]; then
   VBOX_OSTYPE=Debian_64
 else
   VBOX_OSTYPE=Debian
 fi
-
-# Env option: local SSH pubkey
-SSHKEY="${SSHKEY:-}"
-
-# Env option: optionally run ansible playbook
-ANSIBLE_PLAYBOOK="${ANSIBLE_PLAYBOOK:-}"
-# Env option: local SSH port for ansible
-ANSIBLE_SSHPORT="${ANSIBLE_SSHPORT:-2222}"
-# local SSH user for ansible
-ANSIBLE_USER="deploy"
-# Guest additions ISO on the host system
-VBOX_GUEST_ADDITIONS=/usr/share/virtualbox/VBoxGuestAdditions.iso
-
-# location, location, location
-FOLDER_BASE=$(pwd)
-FOLDER_ISO="${FOLDER_BASE}/iso"
-FOLDER_BUILD="${FOLDER_BASE}/build"
-FOLDER_VBOX="${FOLDER_BUILD}/vbox"
-FOLDER_ISO_CUSTOM="${FOLDER_BUILD}/iso/custom"
-FOLDER_ISO_INITRD="${FOLDER_BUILD}/iso/initrd"
-
 # Env option: Use headless mode or GUI
 VM_GUI="${VM_GUI:-}"
 if [ "x${VM_GUI}" == "xyes" ] || [ "x${VM_GUI}" == "x1" ]; then
@@ -67,6 +46,25 @@ fi
 STOPVM="VBoxManage controlvm ${BOX} poweroff"
 # flag if the .vdi file should be compacted
 COMPACTVDI=0
+
+
+# Env option: local SSH pubkey
+SSHKEY="${SSHKEY:-}"
+
+# Env option: optionally run ansible playbook
+ANSIBLE_PLAYBOOK="${ANSIBLE_PLAYBOOK:-}"
+# Env option: local SSH port for ansible
+ANSIBLE_SSHPORT="${ANSIBLE_SSHPORT:-2222}"
+# local SSH user for ansible
+ANSIBLE_USER="deploy"
+
+# location, location, location
+FOLDER_BASE=$(pwd)
+FOLDER_ISO="${FOLDER_BASE}/iso"
+FOLDER_BUILD="${FOLDER_BASE}/build"
+FOLDER_VBOX="${FOLDER_BASE}/vbox"
+FOLDER_ISO_CUSTOM="${FOLDER_BUILD}/iso/custom"
+FOLDER_ISO_INITRD="${FOLDER_BUILD}/iso/initrd"
 
 # Env option: Use custom preseed.cfg or default
 DEFAULT_PRESEED="${BASEDIR}/preseed.cfg"
@@ -81,7 +79,6 @@ LATE_CMD="${LATE_CMD:-"$DEFAULT_LATE_CMD"}"
 hash curl 2>/dev/null || { echo >&2 "ERROR: curl not found. Aborting."; exit 1; }
 hash cpio 2>/dev/null || { echo >&2 "ERROR: cpio not found. Aborting."; exit 1; }
 hash vagrant 2>/dev/null || { echo >&2 "ERROR: vagrant not found. Aborting."; exit 1; }
-hash VBoxManage 2>/dev/null || { echo >&2 "ERROR: VBoxManage not found. Aborting."; exit 1; }
 hash 7z 2>/dev/null || { echo >&2 "ERROR: 7z not found. Aborting."; exit 1; }
 # cd image generation program
 if hash mkisofs 2>/dev/null; then
@@ -106,23 +103,26 @@ else
   echo >&2 "ERROR: sha256sum or sha1sum or md5sum not found. Aborting."
   exit 1
 fi
-
+# VirtualBox
+hash VBoxManage 2>/dev/null || { echo >&2 "ERROR: VBoxManage not found. Aborting."; exit 1; }
+# Guest additions ISO on the host system
+VBOX_GUEST_ADDITIONS=/usr/share/virtualbox/VBoxGuestAdditions.iso
 if [ ! -f "$VBOX_GUEST_ADDITIONS" ]; then
   echo >&2 "ERROR: VirtualBox guest addition file $VBOX_GUEST_ADDITIONS not found. Aborting."
   exit 1
-fi
-
-if [ -n "$ANSIBLE_PLAYBOOK" ]; then
-  if ! hash ansible-playbook 2>/dev/null; then
-    echo >&2 "ERROR: ansible-playbook not found. Aborting."
-    exit 1
-  fi
 fi
 # Parameter changes from 4.2 to 4.3
 if [[ "$(VBoxManage --version)" < 4.3 ]]; then
   PORTCOUNT="--sataportcount 1"
 else
   PORTCOUNT="--portcount 1"
+fi
+# ansible
+if [ -n "$ANSIBLE_PLAYBOOK" ]; then
+  if ! hash ansible-playbook 2>/dev/null; then
+    echo >&2 "ERROR: ansible-playbook not found. Aborting."
+    exit 1
+  fi
 fi
 
 ### helper functions ###
