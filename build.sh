@@ -59,6 +59,8 @@ else
   STARTVM="VBoxManage startvm ${BOX} --type headless"
 fi
 STOPVM="VBoxManage controlvm ${BOX} poweroff"
+# flag if the .vdi file should be compacted
+COMPACTVDI=0
 
 # Env option: Use custom preseed.cfg or default
 DEFAULT_PRESEED="${BASEDIR}/preseed.cfg"
@@ -270,9 +272,9 @@ if [ ! -e "${FOLDER_ISO}/custom.iso" ]; then
     -o "${FOLDER_ISO}/custom.iso" "${FOLDER_ISO_CUSTOM}"
 fi
 
-echo "Creating VM Box..."
-# create virtual machine
 if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>/dev/null; then
+  # create virtual machine
+  echo "Creating VM Box..."
   VBoxManage createvm \
     --name "${BOX}" \
     --ostype "${VBOX_OSTYPE}" \
@@ -335,6 +337,9 @@ if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>/dev/null; then
     --device 0 \
     --type dvddrive \
     --medium emptydrive
+
+  # compact virtual disk of newly created VM
+  COMPACTVDI=1
 fi
 
 if [ -n "${ANSIBLE_PLAYBOOK}" ]; then
@@ -369,19 +374,26 @@ if [ -n "${ANSIBLE_PLAYBOOK}" ]; then
   echo "Stopping VM ..."
   ${STOPVM}
 
+  # remove the above added NAT rule
   VBoxManage modifyvm "${BOX}" \
     --natpf1 delete ssh
 
+  # eject the guest addition DVD
   VBoxManage storageattach "${BOX}" \
     --storagectl "IDE Controller" \
     --port 1 \
     --device 0 \
     --type dvddrive \
     --medium emptydrive
+
+  # compact virtual disk of modified VM
+  COMPACTVDI=1
 fi
 
-echo "Compacting the .vdi ..."
-VBoxManage modifyhd "${FOLDER_VBOX}/${BOX}/${BOX}.vdi" --compact
+if [ "$COMPACTVDI" = "1" ]; then
+  echo "Compacting the .vdi ..."
+  VBoxManage modifyhd "${FOLDER_VBOX}/${BOX}/${BOX}.vdi" --compact
+fi
 
 echo "Building Vagrant Box ..."
 vagrant package --base "${BOX}" --output "${BOX}.box"
