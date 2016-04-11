@@ -187,7 +187,7 @@ INITRD_FILENAME="${FOLDER_ISO}/initrd.gz"
 
 # download the installation disk
 if [ ! -e "${ISO_FILENAME}" ]; then
-  echo "Downloading ${ISO_FILE} ..."
+  echo "Downloading ${ISO_URL} ..."
   curl $CURL_OPTS --output "${ISO_FILENAME}" "${ISO_URL}"
 fi
 
@@ -197,12 +197,12 @@ echo "Verifying ${ISO_FILE} ..."
 ISO_HASHURL="${ISO_BASEURL}/${HASH_FILE}"
 ISO_HASHSIGNURL="${ISO_HASHURL}.sign"
 if [ ! -e "${HASH_FILENAME}" ]; then
-  echo "Downloading ${HASH_FILE} ..."
+  echo "Downloading ${ISO_HASHURL} ..."
   curl $CURL_OPTS -sS --output "${HASH_FILENAME}" "${ISO_HASHURL}"
 fi
 # check signature if gpg is available
 if hash gpg 2>/dev/null; then
-  echo "Downloading ${HASHSIGN_FILE} ..."
+  echo "Downloading ${ISO_HASHSIGNURL} ..."
   curl $CURL_OPTS -sS --output "${HASHSIGN_FILENAME}" "${ISO_HASHSIGNURL}"
   echo "Get GPG key with fingerprint ${GPG_KEY} ..."
   gpg --keyserver hkp://keyring.debian.org --recv-keys "${GPG_KEY}"
