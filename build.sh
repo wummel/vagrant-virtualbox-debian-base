@@ -10,6 +10,12 @@ set -o pipefail
 ### Configuration ###
 BASEDIR=$(dirname $0)
 
+# Default curl options
+# --fail: do not output HTML error pages
+# --location: follow redirects
+# For small downloads (< 10kB) the -sS silent option should also be used
+CURL_OPTS="--fail --location"
+
 # Env option: architecture (i386 or amd64)
 ARCH=${ARCH:-amd64}
 # Env option: Debian CD image mirror
@@ -170,7 +176,7 @@ INITRD_FILENAME="${FOLDER_ISO}/initrd.gz"
 # download the installation disk
 if [ ! -e "${ISO_FILENAME}" ]; then
   echo "Downloading ${ISO_FILE} ..."
-  curl --fail --output "${ISO_FILENAME}" -L "${ISO_URL}"
+  curl $CURL_OPTS --output "${ISO_FILENAME}" "${ISO_URL}"
 fi
 
 echo "Verifying ${ISO_FILE} ..."
@@ -180,13 +186,12 @@ ISO_HASHURL="${ISO_BASEURL}/${HASH_FILE}"
 ISO_HASHSIGNURL="${ISO_HASHURL}.sign"
 if [ ! -e "${HASH_FILENAME}" ]; then
   echo "Downloading ${HASH_FILE} ..."
-  # use -sS silent options since the download is very small
-  curl --fail -sS --output "${HASH_FILENAME}" -L "${ISO_HASHURL}"
+  curl $CURL_OPTS -sS --output "${HASH_FILENAME}" "${ISO_HASHURL}"
 fi
 # check signature if gpg is available
 if hash gpg 2>/dev/null; then
   echo "Downloading ${HASHSIGN_FILE} ..."
-  curl --fail -sS --output "${HASHSIGN_FILENAME}" -L "${ISO_HASHSIGNURL}"
+  curl $CURL_OPTS -sS --output "${HASHSIGN_FILENAME}" "${ISO_HASHSIGNURL}"
   echo "Get GPG key ${GPG_KEY} ..."
   gpg --keyserver hkp://keyring.debian.org --recv-keys ${GPG_KEY}
   echo "Verify GPG key ..."
@@ -257,7 +262,7 @@ if [ ! -e "${FOLDER_ISO}/custom.iso" ]; then
   if [ -n "${SSHKEY}" ]; then
     cp "${SSHKEY}" "${FOLDER_ISO_CUSTOM}/sshkey.pub"
   else
-    curl --fail --output "${FOLDER_ISO_CUSTOM}/sshkey.pub" "https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub"
+    curl $CURL_OPTS -sS --output "${FOLDER_ISO_CUSTOM}/sshkey.pub" "https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub"
   fi
 
   # Add sudo config file
