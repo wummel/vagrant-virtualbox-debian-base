@@ -18,11 +18,18 @@ CURL_OPTS="--fail --location"
 
 # Env option: architecture (i386 or amd64)
 ARCH=${ARCH:-amd64}
-# Env option: Debian CD image mirror
+# Env option: Debian CD image mirror; default is http://cdimage.debian.org/debian-cd/
 DEBIAN_CDIMAGE=${DEBIAN_CDIMAGE:-cdimage.debian.org}
 DEBIAN_CDIMAGE_URL="http://${DEBIAN_CDIMAGE}/debian-cd/"
-# For current available CD images see http://cdimage.debian.org/debian-cd/
-DEBVER="8.3.0"
+# Check if the Debian version is set manually (ie. DEBVER="8.4.0")
+# or use the current version
+if [ -z ${DEBVER+x} ]; then
+  # Detect the current Debian version number.
+  DEBVER=$(curl $CURL_OPTS -sS ${DEBIAN_CDIMAGE_URL} | grep -E ">[0-9]+\.[0-9]\.[0-9]/<" | sed -r 's/.*>([0-9]+\.[0-9]\.[0-9])\/<.*/\1/')
+  echo "Detected Debian version \"$DEBVER\" from $DEBIAN_CDIMAGE_URL"
+else
+  echo "Using Debian version \"$DEBVER\""
+fi
 BOX="debian-jessie-${ARCH}"
 ISO_FILE="debian-${DEBVER}-${ARCH}-netinst.iso"
 ISO_BASEURL="${DEBIAN_CDIMAGE_URL}${DEBVER}/${ARCH}/iso-cd"

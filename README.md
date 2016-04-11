@@ -2,7 +2,7 @@
 
 This script will:
 
- 1. download and verify the `Debian 8 "Jessie"` CD image, 64bit or 32bit iso
+ 1. download and verify the latest `Debian 8 "Jessie"` CD image
  2. ... do some magic to turn it into a vagrant box file
  3. output `debian-jessie-i386.box` or `debian-jessie-amd64.box`
 
@@ -13,7 +13,7 @@ This script will:
  * mkisofs for generating a custom Debian CD image
  * 7zip for unpacking the Debian CD image
  * one of md5sum, sha1sum or sha256sum for Debian CD image hash check
- * optional: gpg to verify the Debian CD image
+ * recommended: gpg to verify the Debian CD image
 
 ## Configuration
 
