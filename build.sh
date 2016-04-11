@@ -27,9 +27,9 @@ BOX="debian-jessie-${ARCH}"
 ISO_FILE="debian-${DEBVER}-${ARCH}-netinst.iso"
 ISO_BASEURL="${DEBIAN_CDIMAGE_URL}${DEBVER}/${ARCH}/iso-cd"
 ISO_URL="${ISO_BASEURL}/${ISO_FILE}"
-# GPG verification key for signed hash file
+# GPG verification key for signed hash file from https://www.debian.org/CD/verify
 # note: the key is hardcoded, this might change in the future
-GPG_KEY=0x6294BE9B
+GPG_KEY="DF9B 9C49 EAA9 2984 3258  9D76 DA87 E80D 6294 BE9B"
 # Map architecture to VirtualBox OS type
 if [ "$ARCH" = "amd64" ]; then
   VBOX_OSTYPE=Debian_64
@@ -192,13 +192,13 @@ fi
 if hash gpg 2>/dev/null; then
   echo "Downloading ${HASHSIGN_FILE} ..."
   curl $CURL_OPTS -sS --output "${HASHSIGN_FILENAME}" "${ISO_HASHSIGNURL}"
-  echo "Get GPG key ${GPG_KEY} ..."
-  gpg --keyserver hkp://keyring.debian.org --recv-keys ${GPG_KEY}
+  echo "Get GPG key with fingerprint ${GPG_KEY} ..."
+  gpg --keyserver hkp://keyring.debian.org --recv-keys "${GPG_KEY}"
   echo "Verify GPG key ..."
   gpg --verify "${HASHSIGN_FILENAME}" "${HASH_FILENAME}"
   rm -f "${HASHSIGN_FILENAME}"
 else
-  echo "INFO: gpg binary not found - skipping signature check"
+  echo "WARN: gpg binary not found - skipping signature check"
 fi
 ISO_HASH="$(cat "${HASH_FILENAME}" | grep " $ISO_FILE" | cut -f1 -d" ")"
 ISO_HASH_CALCULATED=$($HASH_PROG "${ISO_FILENAME}" | cut -d ' ' -f 1)
