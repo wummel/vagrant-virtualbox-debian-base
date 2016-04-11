@@ -20,12 +20,12 @@ CURL_OPTS="--fail --location"
 ARCH=${ARCH:-amd64}
 # Env option: Debian CD image mirror
 DEBIAN_CDIMAGE=${DEBIAN_CDIMAGE:-cdimage.debian.org}
-
+DEBIAN_CDIMAGE_URL="http://${DEBIAN_CDIMAGE}/debian-cd/"
 # For current available CD images see http://cdimage.debian.org/debian-cd/
 DEBVER="8.3.0"
 BOX="debian-jessie-${ARCH}"
 ISO_FILE="debian-${DEBVER}-${ARCH}-netinst.iso"
-ISO_BASEURL="http://${DEBIAN_CDIMAGE}/debian-cd/${DEBVER}/${ARCH}/iso-cd"
+ISO_BASEURL="${DEBIAN_CDIMAGE_URL}${DEBVER}/${ARCH}/iso-cd"
 ISO_URL="${ISO_BASEURL}/${ISO_FILE}"
 # GPG verification key for signed hash file
 # note: the key is hardcoded, this might change in the future
