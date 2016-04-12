@@ -62,7 +62,7 @@ else
   PORTCOUNT="--portcount 1"
 fi
 # ansible
-if [ -n "$ANSIBLE_PLAYBOOK" ]; then
+if [ -v ANSIBLE_PLAYBOOK ]; then
   if ! hash ansible-playbook 2>/dev/null; then
     echo >&2 "ERROR: ansible-playbook not found. Aborting."
     exit 1
@@ -93,8 +93,10 @@ if [ -z ${DEBVER+x} ]; then
 else
   echo "Using Debian version \"$DEBVER\""
 fi
-BOX="debian-jessie-${ARCH}"
+# Env option: the vagrant box name; default is debian-jessie-$ARCH
+BOX=${BOX:-debian-jessie-${ARCH}}
 ISO_FILE="debian-${DEBVER}-${ARCH}-netinst.iso"
+ISO_CUSTOM_FILE="debian-${DEBVER}-${ARCH}-netinst-custom.iso"
 ISO_BASEURL="${DEBIAN_CDIMAGE_URL}${DEBVER}/${ARCH}/iso-cd"
 ISO_URL="${ISO_BASEURL}/${ISO_FILE}"
 # GPG verification key for signed hash file from https://www.debian.org/CD/verify
@@ -170,9 +172,9 @@ if [ -f host.ini ]; then
   rm host.ini
 fi
 cleanup
-if [ -f "${FOLDER_ISO}/custom.iso" ]; then
-  echo "Removing custom iso ..."
-  rm "${FOLDER_ISO}/custom.iso"
+if [ -f "${FOLDER_ISO}/${ISO_CUSTOM_FILE}" ]; then
+  echo "Removing custom iso ${ISO_CUSTOM_FILE}..."
+  rm "${FOLDER_ISO}/${ISO_CUSTOM_FILE}"
 fi
 if [ -f "${FOLDER_BASE}/${BOX}.box" ]; then
   echo "Removing old ${BOX}.box" ...
@@ -419,7 +421,7 @@ if [ "$COMPACTVDI" = "1" ]; then
   VBoxManage modifyhd "${FOLDER_VBOX}/${BOX}/${BOX}.vdi" --compact
 fi
 
-echo "Building Vagrant Box ..."
+echo "Building Vagrant Box ${BOX}..."
 vagrant package --base "${BOX}" --output "${BOX}.box"
 
 # references:
