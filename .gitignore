@@ -1,8 +1,9 @@
-build/
-test/
-iso/
-local/
-.DS_Store
-host.ini
+/build/
+/test/
+/iso/
+/vbox/
+/local/
+/.DS_Store
+/host.ini
 *.box
 *.sw?

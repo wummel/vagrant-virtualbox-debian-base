@@ -2,9 +2,9 @@
 
 This script will:
 
- 1. download and verify the latest `Debian 8 "Jessie"` CD image
+ 1. download and verify the latest `Debian 9 "Stretch"` CD image
  2. ... do some magic to turn it into a vagrant box file
- 3. output `debian-jessie-i386.box` or `debian-jessie-amd64.box`
+ 3. output `debian-stretch-i386.box` or `debian-stretch-amd64.box`
 
 ## Requirements
 
@@ -29,9 +29,9 @@ This should do everything you need. If you don't have `mkisofs` or `p7zip`, inst
     brew install cdrtools
     brew install p7zip
 
-To add `debian-jessie-amd64.box` with name `debian-jessie` into vagrant:
+To add `debian-stretch-amd64.box` with name `debian-stretch` into vagrant:
 
-    vagrant box add "debian-jessie" debian-jessie-amd64.box
+    vagrant box add "debian-stretch" debian-stretch-amd64.box
 
 ## Usage on Linux
 
@@ -42,9 +42,9 @@ This should do everything you need. If you don't have `mkisofs` or `p7zip`:
     sudo apt-get install genisoimage
     sudo apt-get install p7zip-full
 
-To add `debian-jessie-amd64.box` with name `debian-jessie` into vagrant:
+To add `debian-stretch-amd64.box` with name `debian-stretch` into vagrant:
 
-    vagrant box add "debian-jessie" debian-jessie-amd64.box
+    vagrant box add "debian-stretch" debian-stretch-amd64.box
 
 ## Usage on Windows (under cygwin/git shell)
 

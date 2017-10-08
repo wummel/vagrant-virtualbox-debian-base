@@ -1,9 +1,9 @@
 #!/bin/bash
 #This script will:
 #
-# 1. download and verify the latest Debian 8 "Jessie" CD image
+# 1. download and verify the latest Debian 9 "Stretch" CD image
 # 2. ... do some magic to turn it into a vagrant box file
-# 3. output debian-jessie-i386.box or debian-jessie-amd64.box
+# 3. output debian-stretch-i386.box or debian-stretch-amd64.box
 #
 # See README.md for more info
 
@@ -78,6 +78,8 @@ BASEDIR=$(dirname $0)
 # For small downloads (< 10kB) the -sS silent option should also be used
 CURL_OPTS="--fail --location"
 
+# Distribution name
+DEBIAN_DIST=stretch
 # Env option: architecture (i386 or amd64)
 ARCH=${ARCH:-amd64}
 # Env option: Debian CD image mirror; default is http://cdimage.debian.org/debian-cd/
@@ -92,8 +94,8 @@ if [ -z ${DEBVER+x} ]; then
 else
   echo "Using Debian version \"$DEBVER\""
 fi
-# Env option: the vagrant box name; default is debian-jessie-$ARCH
-BOX=${BOX:-debian-jessie-${ARCH}}
+# Env option: the vagrant box name; default is debian-${DEBIAN_DIST}-$ARCH
+BOX=${BOX:-debian-${DEBIAN_DIST}-${ARCH}}
 ISO_FILE="debian-${DEBVER}-${ARCH}-netinst.iso"
 ISO_CUSTOM_FILE="debian-${DEBVER}-${ARCH}-netinst-custom.iso"
 ISO_BASEURL="${DEBIAN_CDIMAGE_URL}${DEBVER}/${ARCH}/iso-cd"
