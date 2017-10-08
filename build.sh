@@ -52,8 +52,7 @@ hash VBoxManage 2>/dev/null || { echo >&2 "ERROR: VBoxManage not found. Aborting
 # Guest additions ISO on the host system
 VBOX_GUEST_ADDITIONS=/usr/share/virtualbox/VBoxGuestAdditions.iso
 if [ ! -f "$VBOX_GUEST_ADDITIONS" ]; then
-  echo >&2 "ERROR: VirtualBox guest addition file $VBOX_GUEST_ADDITIONS not found. Aborting."
-  exit 1
+  echo >&2 "INFO: $VBOX_GUEST_ADDITIONS not found, use Debian packages virtualbox-guest-utils, virtualbox-guest-x11 in ansible scripts."
 fi
 # Parameter changes from 4.2 to 4.3
 if [[ "$(VBoxManage --version)" < 4.3 ]]; then
@@ -382,13 +381,15 @@ if [ -n "${ANSIBLE_PLAYBOOK}" ]; then
   VBoxManage modifyvm "${BOX}" \
     --natpf1 "ssh,tcp,,${ANSIBLE_SSHPORT},,22"
 
-  # mount VBox Guest Additions to allow install or upgrade with ansible
-  VBoxManage storageattach "${BOX}" \
-    --storagectl "IDE Controller" \
-    --port 1 \
-    --device 0 \
-    --type dvddrive \
-    --medium "${VBOX_GUEST_ADDITIONS}"
+  if [ -f "$VBOX_GUEST_ADDITIONS" ]; then
+    # mount VBox Guest Additions to allow install or upgrade with ansible
+    VBoxManage storageattach "${BOX}" \
+      --storagectl "IDE Controller" \
+      --port 1 \
+      --device 0 \
+      --type dvddrive \
+      --medium "${VBOX_GUEST_ADDITIONS}"
+  fi
 
   ${STARTVM}
   echo "Waiting for VM ssh server "
@@ -407,13 +408,15 @@ if [ -n "${ANSIBLE_PLAYBOOK}" ]; then
   VBoxManage modifyvm "${BOX}" \
     --natpf1 delete ssh
 
-  # eject the guest addition DVD
-  VBoxManage storageattach "${BOX}" \
-    --storagectl "IDE Controller" \
-    --port 1 \
-    --device 0 \
-    --type dvddrive \
-    --medium emptydrive
+  if [ -f "$VBOX_GUEST_ADDITIONS" ]; then
+    # eject the guest addition DVD
+    VBoxManage storageattach "${BOX}" \
+      --storagectl "IDE Controller" \
+      --port 1 \
+      --device 0 \
+      --type dvddrive \
+      --medium emptydrive
+  fi
 
   # compact virtual disk of modified VM
   COMPACTVDI=1
