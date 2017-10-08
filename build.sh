@@ -230,7 +230,7 @@ fi
 
 # customize it
 echo "Creating Custom ISO"
-if [ ! -e "${FOLDER_ISO}/custom.iso" ]; then
+if [ ! -e "${FOLDER_ISO}/${ISO_CUSTOM_FILE}" ]; then
 
   echo "Using 7zip"
   if ! 7z x "${ISO_FILENAME}" -o"${FOLDER_ISO_CUSTOM}"; then
@@ -295,7 +295,7 @@ if [ ! -e "${FOLDER_ISO}/custom.iso" ]; then
     -J -l -b isolinux/isolinux.bin \
     -c isolinux/boot.cat -no-emul-boot \
     -boot-load-size 4 -boot-info-table \
-    -o "${FOLDER_ISO}/custom.iso" "${FOLDER_ISO_CUSTOM}"
+    -o "${FOLDER_ISO}/${ISO_CUSTOM_FILE}" "${FOLDER_ISO_CUSTOM}"
 fi
 
 if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
@@ -328,7 +328,7 @@ if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
     --port 1 \
     --device 0 \
     --type dvddrive \
-    --medium "${FOLDER_ISO}/custom.iso"
+    --medium "${FOLDER_ISO}/${ISO_CUSTOM_FILE}"
 
   VBoxManage storagectl "${BOX}" \
     --name "SATA Controller" \
@@ -347,6 +347,9 @@ if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
     --device 0 \
     --type hdd \
     --medium "${FOLDER_VBOX}/${BOX}/${BOX}.vdi"
+
+  VBoxManage modifyvm "${BOX}" \
+    --nic2 hostonly
 
   ${STARTVM}
 
