@@ -352,9 +352,6 @@ if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
     --type hdd \
     --medium "${FOLDER_VBOX}/${BOX}/${BOX}.vdi"
 
-  #VBoxManage modifyvm "${BOX}" \
-  #  --nic2 none
-
   ${STARTVM}
 
   echo -n "Waiting for installer to finish "
@@ -434,6 +431,9 @@ fi
 
 echo "Building Vagrant Box ${BOX}..."
 vagrant package --base "${BOX}" --output "${BOX}.box"
+
+echo "Done. Add your new box to vagrant with:"
+echo "vagrant box add --name \"myvagrantbox\" ${BOX}.box"
 
 # references:
 # http://blog.ericwhite.ca/articles/2009/11/unattended-debian-lenny-install/

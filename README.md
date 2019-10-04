@@ -6,6 +6,10 @@ This script will:
  2. ... do some magic to turn it into a vagrant box file
  3. output `debian-buster-i386.box` or `debian-buster-amd64.box`
 
+To add new boxes to vagrant:
+
+    vagrant box add --name "myvagrantbox" debian-buster-amd64.box
+
 ## Requirements
 
  * Oracle VM VirtualBox >= 4.3
@@ -19,7 +23,7 @@ This script will:
 
 Set the password hash of the `deploy` user in preseed.cfg.
 
-    $ python3 -c 'import crypt; print(crypt.crypt("mypassword", crypt.mksalt(crypt.METHOD_SHA512)))'
+    python3 -c 'import crypt; print(crypt.crypt("mypassword", crypt.mksalt(crypt.METHOD_SHA512)))'
 
 Copy-paste the printed crypt(3) hash into preseed.cfg at the following line:
 
