@@ -1,9 +1,9 @@
 #!/bin/bash
 #This script will:
 #
-# 1. download and verify the latest Debian 9 "Stretch" CD image
+# 1. download and verify the latest Debian 10 "Buster" CD image
 # 2. ... do some magic to turn it into a vagrant box file
-# 3. output debian-stretch-i386.box or debian-stretch-amd64.box
+# 3. output debian-buster-i386.box or debian-buster-amd64.box
 #
 # See README.md for more info
 
@@ -49,16 +49,15 @@ else
 fi
 # VirtualBox
 hash VBoxManage 2>/dev/null || { echo >&2 "ERROR: VBoxManage not found. Aborting."; exit 1; }
+# Check Virtualbox compatibility
+if [[ "$(VBoxManage --version)" < 4.3 ]]; then
+  echo >&2 "ERROR: Need Virtualbox >= 4.3, but found $(VBoxManage --version)."
+  exit 1
+fi
 # Guest additions ISO on the host system
 VBOX_GUEST_ADDITIONS=/usr/share/virtualbox/VBoxGuestAdditions.iso
 if [ ! -f "$VBOX_GUEST_ADDITIONS" ]; then
   echo >&2 "INFO: $VBOX_GUEST_ADDITIONS not found, use Debian packages virtualbox-guest-utils, virtualbox-guest-x11 in ansible scripts."
-fi
-# Parameter changes from 4.2 to 4.3
-if [[ "$(VBoxManage --version)" < 4.3 ]]; then
-  PORTCOUNT="--sataportcount 1"
-else
-  PORTCOUNT="--portcount 1"
 fi
 # ansible
 if [ -v ANSIBLE_PLAYBOOK ]; then
@@ -79,9 +78,14 @@ BASEDIR=$(dirname $0)
 CURL_OPTS="--fail --location"
 
 # Distribution name
-DEBIAN_DIST=stretch
+DEBIAN_DIST=buster
 # Env option: architecture (i386 or amd64)
 ARCH=${ARCH:-amd64}
+# RAM and VRAM size
+RAM_MB=1024
+VRAM_MB=12
+# HD size
+HD_MB=40960
 # Env option: Debian CD image mirror; default is http://cdimage.debian.org/debian-cd/
 DEBIAN_CDIMAGE=${DEBIAN_CDIMAGE:-cdimage.debian.org}
 DEBIAN_CDIMAGE_URL="http://${DEBIAN_CDIMAGE}/debian-cd/"
@@ -193,7 +197,6 @@ ISO_FILENAME="${FOLDER_ISO}/${ISO_FILE}"
 HASH_FILENAME="${FOLDER_ISO}/${HASH_FILE}"
 HASHSIGN_FILE="${HASH_FILE}.sign"
 HASHSIGN_FILENAME="${FOLDER_ISO}/${HASHSIGN_FILE}"
-INITRD_FILENAME="${FOLDER_ISO}/initrd.gz"
 
 # download the installation disk
 if [ ! -e "${ISO_FILENAME}" ]; then
@@ -245,15 +248,15 @@ if [ ! -e "${FOLDER_ISO}/${ISO_CUSTOM_FILE}" ]; then
   FOLDER_INSTALL=$(ls -1 -d "${FOLDER_ISO_CUSTOM}/install."* | sed 's/^.*\///')
   chmod u+w "${FOLDER_ISO_CUSTOM}/${FOLDER_INSTALL}" "${FOLDER_ISO_CUSTOM}/install" "${FOLDER_ISO_CUSTOM}/${FOLDER_INSTALL}/initrd.gz"
   cp -r "${FOLDER_ISO_CUSTOM}/${FOLDER_INSTALL}/"* "${FOLDER_ISO_CUSTOM}/install/"
-  mv "${FOLDER_ISO_CUSTOM}/install/initrd.gz" "${FOLDER_ISO_CUSTOM}/install/initrd.gz.org"
+  mv "${FOLDER_ISO_CUSTOM}/install/initrd.gz" "${FOLDER_ISO_CUSTOM}/install/initrd.gz.orig"
 
   # stick in our new initrd.gz
   echo "Installing new initrd.gz ..."
   cd "${FOLDER_ISO_INITRD}"
   if [ "$OSTYPE" = "msys" ]; then
-    gunzip -c "${FOLDER_ISO_CUSTOM}/install/initrd.gz.org" | cpio -i --make-directories || true
+    gunzip -c "${FOLDER_ISO_CUSTOM}/install/initrd.gz.orig" | cpio -i --make-directories || true
   else
-    gunzip -c "${FOLDER_ISO_CUSTOM}/install/initrd.gz.org" | cpio -id || true
+    gunzip -c "${FOLDER_ISO_CUSTOM}/install/initrd.gz.orig" | cpio -id || true
   fi
   cd "${FOLDER_BASE}"
   if [ "${PRESEED}" != "${DEFAULT_PRESEED}" ] ; then
@@ -265,14 +268,14 @@ if [ ! -e "${FOLDER_ISO}/${ISO_CUSTOM_FILE}" ]; then
 
   # clean up permissions
   echo "Cleaning up Permissions ..."
-  chmod u-w "${FOLDER_ISO_CUSTOM}/install" "${FOLDER_ISO_CUSTOM}/install/initrd.gz" "${FOLDER_ISO_CUSTOM}/install/initrd.gz.org"
+  chmod u-w "${FOLDER_ISO_CUSTOM}/install" "${FOLDER_ISO_CUSTOM}/install/initrd.gz" "${FOLDER_ISO_CUSTOM}/install/initrd.gz.orig"
 
   # replace isolinux configuration
   echo "Replacing isolinux config ..."
   cd "${FOLDER_BASE}"
   chmod u+w "${FOLDER_ISO_CUSTOM}/isolinux" "${FOLDER_ISO_CUSTOM}/isolinux/isolinux.cfg"
   rm "${FOLDER_ISO_CUSTOM}/isolinux/isolinux.cfg"
-  cp ${BASEDIR}/isolinux.cfg "${FOLDER_ISO_CUSTOM}/isolinux/isolinux.cfg"
+  cp "${BASEDIR}/isolinux.cfg" "${FOLDER_ISO_CUSTOM}/isolinux/isolinux.cfg"
   chmod u+w "${FOLDER_ISO_CUSTOM}/isolinux/isolinux.bin"
 
   # add late_command script
@@ -309,12 +312,12 @@ if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
     --basefolder "${FOLDER_VBOX}"
 
   VBoxManage modifyvm "${BOX}" \
-    --memory 360 \
+    --memory "$RAM_MB" \
     --boot1 dvd \
     --boot2 disk \
     --boot3 none \
     --boot4 none \
-    --vram 12 \
+    --vram "$VRAM_MB" \
     --pae off \
     --rtcuseutc on
 
@@ -335,12 +338,12 @@ if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
     --name "SATA Controller" \
     --add sata \
     --controller IntelAhci \
-    $PORTCOUNT \
+    --portcount 1 \
     --hostiocache off
 
   VBoxManage createhd \
     --filename "${FOLDER_VBOX}/${BOX}/${BOX}.vdi" \
-    --size 40960
+    --size "$HD_MB"
 
   VBoxManage storageattach "${BOX}" \
     --storagectl "SATA Controller" \
@@ -349,8 +352,8 @@ if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
     --type hdd \
     --medium "${FOLDER_VBOX}/${BOX}/${BOX}.vdi"
 
-  VBoxManage modifyvm "${BOX}" \
-    --nic2 hostonly
+  #VBoxManage modifyvm "${BOX}" \
+  #  --nic2 none
 
   ${STARTVM}
 

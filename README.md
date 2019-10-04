@@ -2,13 +2,13 @@
 
 This script will:
 
- 1. download and verify the latest `Debian 9 "Stretch"` CD image
+ 1. download and verify the latest `Debian 10 "buster"` CD image
  2. ... do some magic to turn it into a vagrant box file
- 3. output `debian-stretch-i386.box` or `debian-stretch-amd64.box`
+ 3. output `debian-buster-i386.box` or `debian-buster-amd64.box`
 
 ## Requirements
 
- * Oracle VM VirtualBox
+ * Oracle VM VirtualBox >= 4.3
  * Vagrant
  * mkisofs for generating a custom Debian CD image
  * 7zip for unpacking the Debian CD image
@@ -17,8 +17,15 @@ This script will:
 
 ## Configuration
 
- 1. set the password or MD5 hash of the deploy user in preseed.cfg
- 2. optional: adjust locale of timezone values in preseed.cfg
+Set the password hash of the `deploy` user in preseed.cfg.
+
+    $ python3 -c 'import crypt; print(crypt.crypt("mypassword", crypt.mksalt(crypt.METHOD_SHA512)))'
+
+Copy-paste the printed crypt(3) hash into preseed.cfg at the following line:
+
+      d-i passwd/user-password-crypted password [crypt(3) hash]
+
+Optional: see Environment Variables below for more configuration
 
 ## Usage on OSX
 
@@ -29,9 +36,9 @@ This should do everything you need. If you don't have `mkisofs` or `p7zip`, inst
     brew install cdrtools
     brew install p7zip
 
-To add `debian-stretch-amd64.box` with name `debian-stretch` into vagrant:
+To add `debian-buster-amd64.box` with name `debian-buster` into vagrant:
 
-    vagrant box add "debian-stretch" debian-stretch-amd64.box
+    vagrant box add "debian-buster" debian-buster-amd64.box
 
 ## Usage on Linux
 
@@ -42,9 +49,9 @@ This should do everything you need. If you don't have `mkisofs` or `p7zip`:
     sudo apt-get install genisoimage
     sudo apt-get install p7zip-full
 
-To add `debian-stretch-amd64.box` with name `debian-stretch` into vagrant:
+To add `debian-buster-amd64.box` with name `debian-buster` into vagrant:
 
-    vagrant box add "debian-stretch" debian-stretch-amd64.box
+    vagrant box add "debian-buster" debian-buster-amd64.box
 
 ## Usage on Windows (under cygwin/git shell)
 
