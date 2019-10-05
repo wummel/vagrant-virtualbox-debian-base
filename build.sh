@@ -21,6 +21,8 @@ set -o pipefail
 hash curl 2>/dev/null || { echo >&2 "ERROR: curl not found. Aborting."; exit 1; }
 hash grep 2>/dev/null || { echo >&2 "ERROR: grep not found. Aborting."; exit 1; }
 hash sed 2>/dev/null || { echo >&2 "ERROR: sed not found. Aborting."; exit 1; }
+hash bc 2>/dev/null || { echo >&2 "ERROR: bc not found. Aborting."; exit 1; }
+hash cut 2>/dev/null || { echo >&2 "ERROR: cut not found. Aborting."; exit 1; }
 hash cpio 2>/dev/null || { echo >&2 "ERROR: cpio not found. Aborting."; exit 1; }
 hash vagrant 2>/dev/null || { echo >&2 "ERROR: vagrant not found. Aborting."; exit 1; }
 hash 7z 2>/dev/null || { echo >&2 "ERROR: 7z not found. Aborting."; exit 1; }
@@ -50,8 +52,9 @@ fi
 # VirtualBox
 hash VBoxManage 2>/dev/null || { echo >&2 "ERROR: VBoxManage not found. Aborting."; exit 1; }
 # Check Virtualbox compatibility
-if [[ "$(VBoxManage --version)" < 4.3 ]]; then
-  echo >&2 "ERROR: Need Virtualbox >= 4.3, but found $(VBoxManage --version)."
+VBOXVER="$(VBoxManage --version|cut -d'.' -f1-2)"
+if [ "$(echo "$VBOXVER < 4.3" | bc)" == "1" ]; then
+  echo >&2 "ERROR: Need Virtualbox >= 4.3, but found $VBOXVER."
   exit 1
 fi
 # Guest additions ISO on the host system
@@ -69,7 +72,7 @@ fi
 
 
 ### Configuration ###
-BASEDIR=$(dirname $0)
+BASEDIR=$(realpath "$(dirname "$0")")
 
 # Default curl options
 # --fail: do not output HTML error pages
@@ -93,7 +96,7 @@ DEBIAN_CDIMAGE_URL="http://${DEBIAN_CDIMAGE}/debian-cd/"
 # or use the current version
 if [ -z ${DEBVER+x} ]; then
   # Detect the current Debian version number.
-  DEBVER=$(curl $CURL_OPTS -sS ${DEBIAN_CDIMAGE_URL} | grep -E ">[0-9]+\.[0-9]\.[0-9]/<" | sed -r 's/.*>([0-9]+\.[0-9]\.[0-9])\/<.*/\1/')
+  DEBVER=$(curl $CURL_OPTS -sS "${DEBIAN_CDIMAGE_URL}" | grep -E ">[0-9]+\\.[0-9]\\.[0-9]/<" | sed -r 's/.*>([0-9]+\.[0-9]\.[0-9])\/<.*/\1/')
   echo "Detected Debian version \"$DEBVER\" from $DEBIAN_CDIMAGE_URL"
 else
   echo "Using Debian version \"$DEBVER\""
@@ -225,7 +228,7 @@ if hash gpg 2>/dev/null; then
 else
   echo "WARN: gpg binary not found - skipping signature check"
 fi
-ISO_HASH="$(cat "${HASH_FILENAME}" | grep " $ISO_FILE" | cut -f1 -d" ")"
+ISO_HASH="$(grep " $ISO_FILE" "${HASH_FILENAME}" | cut -f1 -d" ")"
 ISO_HASH_CALCULATED=$($HASH_PROG "${ISO_FILENAME}" | cut -d ' ' -f 1)
 if [ "${ISO_HASH_CALCULATED}" != "${ISO_HASH}" ]; then
   echo >&2 "ERROR: hash from $HASH_PROG does not match. Got ${ISO_HASH_CALCULATED} instead of ${ISO_HASH}. Aborting."
