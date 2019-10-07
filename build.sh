@@ -84,10 +84,12 @@ CURL_OPTS="--fail --location"
 DEBIAN_DIST=buster
 # Env option: architecture (i386 or amd64)
 ARCH=${ARCH:-amd64}
-# RAM and VRAM size
+# RAM size of the generated box
+# note: selecting too few RAM results in warnings from the debian installer
 RAM_MB=1024
+# VRAM size of the generated box
 VRAM_MB=12
-# HD size
+# HD size of the generated box
 HD_MB=40960
 # Env option: Debian CD image mirror; default is http://cdimage.debian.org/debian-cd/
 DEBIAN_CDIMAGE=${DEBIAN_CDIMAGE:-cdimage.debian.org}
@@ -160,6 +162,7 @@ function cleanup {
     echo "Cleaning build directory ..."
     chmod -R u+w "${FOLDER_BUILD}"
     rm -rf "${FOLDER_BUILD}"
+    echo "Done."
   fi
 }
 
@@ -174,7 +177,7 @@ if VBoxManage list runningvms | grep "${BOX}" >/dev/null 2>&1; then
 fi
 if VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
   echo "Unregistering VM ..."
-  VBoxManage unregistervm "${BOX}" --delete
+  : VBoxManage unregistervm "${BOX}" --delete
 fi
 if [ -f host.ini ]; then
   rm host.ini
@@ -357,7 +360,7 @@ if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
 
   ${STARTVM}
 
-  echo -n "Waiting for installer to finish "
+  echo -n "Waiting for installer to finish (can take up to 20 minutes) "
   while VBoxManage list runningvms | grep "${BOX}" >/dev/null; do
     sleep 20
     echo -n "."
@@ -435,7 +438,9 @@ fi
 echo "Building Vagrant Box ${BOX}..."
 vagrant package --base "${BOX}" --output "${BOX}.box"
 
-echo "Done. Add your new box to vagrant with:"
+echo "Done."
+echo ""
+echo "Add your new box to vagrant with:"
 echo "vagrant box add --name \"myvagrantbox\" ${BOX}.box"
 
 # references:
