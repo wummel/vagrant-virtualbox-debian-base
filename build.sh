@@ -43,7 +43,7 @@ hash sed 2>/dev/null || fatal "sed not found"
 hash bc 2>/dev/null || fatal "bc not found"
 hash cut 2>/dev/null || fatal "cut not found"
 hash cpio 2>/dev/null || fatal "cpio not found"
-hash 7z 2>/dev/null || fatal "7z not found"
+hash bsdtar 2>/dev/null || fatal "bsdtar not found"
 # cd image generation program
 if hash mkisofs 2>/dev/null; then
   MKISOFS="$(which mkisofs)"
@@ -256,12 +256,8 @@ fi
 log_info "Creating Custom ISO"
 if [ ! -e "${FOLDER_ISO}/${ISO_CUSTOM_FILE}" ]; then
 
-  log_info "Using 7zip"
-  if ! 7z x "${ISO_FILENAME}" -o"${FOLDER_ISO_CUSTOM}"; then
-    # If that didn't work, you have to update p7zip
-    fatal "Could not extract the ISO file with 7zip. Try updating to the latest version."
-  fi
-
+  log_info "Using bsdtar"
+  bsdtar -C "${FOLDER_ISO_CUSTOM}" -xf "${ISO_FILENAME}"
   # backup initrd.gz
   log_info "Backing up current init.rd ..."
   FOLDER_INSTALL=$(ls -1 -d "${FOLDER_ISO_CUSTOM}/install."* | sed 's/^.*\///')

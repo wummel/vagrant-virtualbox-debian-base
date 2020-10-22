@@ -15,7 +15,7 @@ To add new boxes to vagrant:
  * Oracle VM VirtualBox >= 4.3
  * Vagrant
  * mkisofs for generating a custom Debian CD image
- * 7zip for unpacking the Debian CD image
+ * bsdtar for unpacking the Debian CD image
  * one of md5sum, sha1sum or sha256sum for Debian CD image hash check
  * recommended: gpg to verify the Debian CD image
 
@@ -35,10 +35,9 @@ Optional: see Environment Variables below for more configuration
 
     ./build.sh
 
-This should do everything you need. If you don't have `mkisofs` or `p7zip`, install [homebrew](http://mxcl.github.com/homebrew/), then:
+This should do everything you need. If you don't have `mkisofs`, install [homebrew](http://mxcl.github.com/homebrew/), then:
 
     brew install cdrtools
-    brew install p7zip
 
 To add `debian-buster-amd64.box` with name `debian-buster` into vagrant:
 
@@ -48,25 +47,18 @@ To add `debian-buster-amd64.box` with name `debian-buster` into vagrant:
 
     ./build.sh
 
-This should do everything you need. If you don't have `mkisofs` or `p7zip`:
+This should do everything you need. If you don't have `mkisofs` or `bsdtar`:
 
     sudo apt-get install genisoimage
-    sudo apt-get install p7zip-full
+    sudo apt-get install libarchive-tools
 
 To add `debian-buster-amd64.box` with name `debian-buster` into vagrant:
 
     vagrant box add "debian-buster" debian-buster-amd64.box
 
-## Usage on Windows (under cygwin/git shell)
+## Usage on Windows (with Windows subsystem for Linux)
 
     ./build.sh
-
-Tested under Windows 7 with this tools:
-
- * [cpio](http://gnuwin32.sourceforge.net/packages/cpio.htm)
- * [md5](http://www.fourmilab.ch/md5/)
- * [7zip](http://www.7-zip.org/)
- * [mkisofs](http://sourceforge.net/projects/cdrtoolswin/)
 
 ## Environment variables
 
