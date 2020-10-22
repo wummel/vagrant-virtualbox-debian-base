@@ -14,26 +14,43 @@ set -o pipefail
 # for debugging
 #set -o xtrace
 
+### Log functions ###
+
+log_info() {
+    echo "INFO  $(date --iso-8601=seconds) $@"
+}
+
+log_warn() {
+    echo "WARN  $(date --iso-8601=seconds) $@"
+}
+
+log_error() {
+    echo "ERROR $(date --iso-8601=seconds) $@" >&2
+}
+
+fatal() {
+    log_error "$@"
+    exit 1
+}
+
 
 ### Check dependencies ###
 
 # basic programs
-hash curl 2>/dev/null || { echo >&2 "ERROR: curl not found. Aborting."; exit 1; }
-hash grep 2>/dev/null || { echo >&2 "ERROR: grep not found. Aborting."; exit 1; }
-hash sed 2>/dev/null || { echo >&2 "ERROR: sed not found. Aborting."; exit 1; }
-hash bc 2>/dev/null || { echo >&2 "ERROR: bc not found. Aborting."; exit 1; }
-hash cut 2>/dev/null || { echo >&2 "ERROR: cut not found. Aborting."; exit 1; }
-hash cpio 2>/dev/null || { echo >&2 "ERROR: cpio not found. Aborting."; exit 1; }
-hash vagrant 2>/dev/null || { echo >&2 "ERROR: vagrant not found. Aborting."; exit 1; }
-hash 7z 2>/dev/null || { echo >&2 "ERROR: 7z not found. Aborting."; exit 1; }
+hash curl 2>/dev/null || fatal "curl not found"
+hash grep 2>/dev/null || fatal "grep not found"
+hash sed 2>/dev/null || fatal "sed not found"
+hash bc 2>/dev/null || fatal "bc not found"
+hash cut 2>/dev/null || fatal "cut not found"
+hash cpio 2>/dev/null || fatal "cpio not found"
+hash 7z 2>/dev/null || fatal "7z not found"
 # cd image generation program
 if hash mkisofs 2>/dev/null; then
   MKISOFS="$(which mkisofs)"
 elif hash genisoimage 2>/dev/null; then
   MKISOFS="$(which genisoimage)"
 else
-  echo >&2 "ERROR: mkisofs or genisoimage not found. Aborting."
-  exit 1
+  fatal "mkisofs or genisoimage not found"
 fi
 # hash check program; prefer sha256 over sha1 over md5
 if hash sha256sum 2>/dev/null; then
@@ -46,27 +63,25 @@ elif hash md5sum 2>/dev/null; then
   HASH_PROG=md5sum
   HASH_FILE=MD5SUMS
 else
-  echo >&2 "ERROR: sha256sum or sha1sum or md5sum not found. Aborting."
-  exit 1
+  fatal "sha256sum or sha1sum or md5sum not found"
 fi
-# VirtualBox
-hash VBoxManage 2>/dev/null || { echo >&2 "ERROR: VBoxManage not found. Aborting."; exit 1; }
+# vagrant and VirtualBox
+hash vagrant 2>/dev/null || fatal "vagrant not found"
+hash VBoxManage 2>/dev/null || fatal "VBoxManage not found"
 # Check Virtualbox compatibility
 VBOXVER="$(VBoxManage --version|cut -d'.' -f1-2)"
 if [ "$(echo "$VBOXVER < 4.3" | bc)" == "1" ]; then
-  echo >&2 "ERROR: Need Virtualbox >= 4.3, but found $VBOXVER."
-  exit 1
+  fatal "Need Virtualbox >= 4.3, but found $VBOXVER."
 fi
 # Guest additions ISO on the host system
 VBOX_GUEST_ADDITIONS=/usr/share/virtualbox/VBoxGuestAdditions.iso
 if [ ! -f "$VBOX_GUEST_ADDITIONS" ]; then
-  echo >&2 "INFO: $VBOX_GUEST_ADDITIONS not found, use Debian packages virtualbox-guest-utils, virtualbox-guest-x11 in ansible scripts."
+  log_info "$VBOX_GUEST_ADDITIONS not found, use Debian packages virtualbox-guest-utils, virtualbox-guest-x11 in ansible scripts."
 fi
 # ansible
 if [ -v ANSIBLE_PLAYBOOK ]; then
   if ! hash ansible-playbook 2>/dev/null; then
-    echo >&2 "ERROR: ansible-playbook not found. Aborting."
-    exit 1
+    fatal "ansible-playbook not found"
   fi
 fi
 
@@ -99,9 +114,9 @@ DEBIAN_CDIMAGE_URL="http://${DEBIAN_CDIMAGE}/debian-cd/"
 if [ -z ${DEBVER+x} ]; then
   # Detect the current Debian version number.
   DEBVER=$(curl $CURL_OPTS -sS "${DEBIAN_CDIMAGE_URL}" | grep -E ">[0-9]+\\.[0-9]\\.[0-9]/<" | sed -r 's/.*>([0-9]+\.[0-9]\.[0-9])\/<.*/\1/')
-  echo "Detected Debian version \"$DEBVER\" from $DEBIAN_CDIMAGE_URL"
+  log_info "Detected Debian version \"$DEBVER\" from $DEBIAN_CDIMAGE_URL"
 else
-  echo "Using Debian version \"$DEBVER\""
+  log_info "Using Debian version \"$DEBVER\""
 fi
 # Env option: the vagrant box name; default is debian-${DEBIAN_DIST}-$ARCH
 BOX=${BOX:-debian-${DEBIAN_DIST}-${ARCH}}
@@ -159,10 +174,10 @@ LATE_CMD="${LATE_CMD:-"$DEFAULT_LATE_CMD"}"
 ### helper functions ###
 function cleanup {
   if [ -d "${FOLDER_BUILD}" ]; then
-    echo "Cleaning build directory ..."
+    log_info "Cleaning build directory ..."
     chmod -R u+w "${FOLDER_BUILD}"
     rm -rf "${FOLDER_BUILD}"
-    echo "Done."
+    log_info "Done."
   fi
 }
 
@@ -172,11 +187,11 @@ trap 'cleanup' EXIT
 
 # start with a clean slate
 if VBoxManage list runningvms | grep "${BOX}" >/dev/null 2>&1; then
-  echo "Stopping VM ..."
+  log_info "Stopping VM ..."
   ${STOPVM}
 fi
 if VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
-  echo "Unregistering VM ..."
+  log_info "Unregistering VM ..."
   : VBoxManage unregistervm "${BOX}" --delete
 fi
 if [ -f host.ini ]; then
@@ -184,11 +199,11 @@ if [ -f host.ini ]; then
 fi
 cleanup
 if [ -f "${FOLDER_ISO}/${ISO_CUSTOM_FILE}" ]; then
-  echo "Removing custom iso ${ISO_CUSTOM_FILE}..."
+  log_info "Removing custom iso ${ISO_CUSTOM_FILE}..."
   rm "${FOLDER_ISO}/${ISO_CUSTOM_FILE}"
 fi
 if [ -f "${FOLDER_BASE}/${BOX}.box" ]; then
-  echo "Removing old ${BOX}.box" ...
+  log_info "Removing old ${BOX}.box" ...
   rm "${FOLDER_BASE}/${BOX}.box"
 fi
 
@@ -206,58 +221,56 @@ HASHSIGN_FILENAME="${FOLDER_ISO}/${HASHSIGN_FILE}"
 
 # download the installation disk
 if [ ! -e "${ISO_FILENAME}" ]; then
-  echo "Downloading ${ISO_URL} ..."
+  log_info "Downloading ${ISO_URL} ..."
   curl $CURL_OPTS --output "${ISO_FILENAME}" "${ISO_URL}"
 fi
 
-echo "Verifying ${ISO_FILE} ..."
+log_info "Verifying ${ISO_FILE} ..."
 # make sure download is right...
 # fetch hash and signature file
 ISO_HASHURL="${ISO_BASEURL}/${HASH_FILE}"
 ISO_HASHSIGNURL="${ISO_HASHURL}.sign"
 if [ ! -e "${HASH_FILENAME}" ]; then
-  echo "Downloading ${ISO_HASHURL} ..."
+  log_info "Downloading ${ISO_HASHURL} ..."
   curl $CURL_OPTS -sS --output "${HASH_FILENAME}" "${ISO_HASHURL}"
 fi
 # check signature if gpg is available
 if hash gpg 2>/dev/null; then
-  echo "Downloading ${ISO_HASHSIGNURL} ..."
+  log_info "Downloading ${ISO_HASHSIGNURL} ..."
   curl $CURL_OPTS -sS --output "${HASHSIGN_FILENAME}" "${ISO_HASHSIGNURL}"
-  echo "Get GPG key with fingerprint ${GPG_KEY} ..."
+  log_info "Get GPG key with fingerprint ${GPG_KEY} ..."
   gpg --keyserver hkp://keyring.debian.org --recv-keys "${GPG_KEY}"
-  echo "Verify GPG key ..."
+  log_info "Verify GPG key ..."
   gpg --verify "${HASHSIGN_FILENAME}" "${HASH_FILENAME}"
   rm -f "${HASHSIGN_FILENAME}"
 else
-  echo "WARN: gpg binary not found - skipping signature check"
+  log_info "WARN: gpg binary not found - skipping signature check"
 fi
 ISO_HASH="$(grep " $ISO_FILE" "${HASH_FILENAME}" | cut -f1 -d" ")"
 ISO_HASH_CALCULATED=$($HASH_PROG "${ISO_FILENAME}" | cut -d ' ' -f 1)
 if [ "${ISO_HASH_CALCULATED}" != "${ISO_HASH}" ]; then
-  echo >&2 "ERROR: hash from $HASH_PROG does not match. Got ${ISO_HASH_CALCULATED} instead of ${ISO_HASH}. Aborting."
-  exit 1
+  fatal "hash from $HASH_PROG does not match. Got ${ISO_HASH_CALCULATED} instead of ${ISO_HASH}"
 fi
 
 # customize it
-echo "Creating Custom ISO"
+log_info "Creating Custom ISO"
 if [ ! -e "${FOLDER_ISO}/${ISO_CUSTOM_FILE}" ]; then
 
-  echo "Using 7zip"
+  log_info "Using 7zip"
   if ! 7z x "${ISO_FILENAME}" -o"${FOLDER_ISO_CUSTOM}"; then
     # If that didn't work, you have to update p7zip
-    echo "Error with extracting the ISO file with your version of p7zip. Try updating to the latest version."
-    exit 1
+    fatal "Could not extract the ISO file with 7zip. Try updating to the latest version."
   fi
 
   # backup initrd.gz
-  echo "Backing up current init.rd ..."
+  log_info "Backing up current init.rd ..."
   FOLDER_INSTALL=$(ls -1 -d "${FOLDER_ISO_CUSTOM}/install."* | sed 's/^.*\///')
   chmod u+w "${FOLDER_ISO_CUSTOM}/${FOLDER_INSTALL}" "${FOLDER_ISO_CUSTOM}/install" "${FOLDER_ISO_CUSTOM}/${FOLDER_INSTALL}/initrd.gz"
   cp -r "${FOLDER_ISO_CUSTOM}/${FOLDER_INSTALL}/"* "${FOLDER_ISO_CUSTOM}/install/"
   mv "${FOLDER_ISO_CUSTOM}/install/initrd.gz" "${FOLDER_ISO_CUSTOM}/install/initrd.gz.orig"
 
   # stick in our new initrd.gz
-  echo "Installing new initrd.gz ..."
+  log_info "Installing new initrd.gz ..."
   cd "${FOLDER_ISO_INITRD}"
   if [ "$OSTYPE" = "msys" ]; then
     gunzip -c "${FOLDER_ISO_CUSTOM}/install/initrd.gz.orig" | cpio -i --make-directories || true
@@ -266,18 +279,18 @@ if [ ! -e "${FOLDER_ISO}/${ISO_CUSTOM_FILE}" ]; then
   fi
   cd "${FOLDER_BASE}"
   if [ "${PRESEED}" != "${DEFAULT_PRESEED}" ] ; then
-    echo "Using custom preseed file ${PRESEED}"
+    log_info "Using custom preseed file ${PRESEED}"
   fi
   cp "${PRESEED}" "${FOLDER_ISO_INITRD}/preseed.cfg"
   cd "${FOLDER_ISO_INITRD}"
   find . | cpio --create --format='newc' | gzip  > "${FOLDER_ISO_CUSTOM}/install/initrd.gz"
 
   # clean up permissions
-  echo "Cleaning up Permissions ..."
+  log_info "Cleaning up Permissions ..."
   chmod u-w "${FOLDER_ISO_CUSTOM}/install" "${FOLDER_ISO_CUSTOM}/install/initrd.gz" "${FOLDER_ISO_CUSTOM}/install/initrd.gz.orig"
 
   # replace isolinux configuration
-  echo "Replacing isolinux config ..."
+  log_info "Replacing isolinux config ..."
   cd "${FOLDER_BASE}"
   chmod u+w "${FOLDER_ISO_CUSTOM}/isolinux" "${FOLDER_ISO_CUSTOM}/isolinux/isolinux.cfg"
   rm "${FOLDER_ISO_CUSTOM}/isolinux/isolinux.cfg"
@@ -285,7 +298,7 @@ if [ ! -e "${FOLDER_ISO}/${ISO_CUSTOM_FILE}" ]; then
   chmod u+w "${FOLDER_ISO_CUSTOM}/isolinux/isolinux.bin"
 
   # add late_command script
-  echo "Add late_command script ..."
+  log_info "Add late_command script ..."
   chmod u+w "${FOLDER_ISO_CUSTOM}"
   cp "${LATE_CMD}" "${FOLDER_ISO_CUSTOM}/late_command.sh"
 
@@ -299,7 +312,7 @@ if [ ! -e "${FOLDER_ISO}/${ISO_CUSTOM_FILE}" ]; then
   # Add sudo config file
   cp "${BASEDIR}/user.sudo" "${FOLDER_ISO_CUSTOM}/user.sudo"
 
-  echo "Running mkisofs ..."
+  log_info "Running mkisofs ..."
   "$MKISOFS" -r -V "Custom Debian $DEBVER $ARCH CD" \
     -cache-inodes -quiet \
     -J -l -b isolinux/isolinux.bin \
@@ -310,7 +323,7 @@ fi
 
 if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
   # create virtual machine
-  echo "Creating VM Box ${BOX}..."
+  log_info "Creating VM Box ${BOX}..."
   VBoxManage createvm \
     --name "${BOX}" \
     --ostype "${VBOX_OSTYPE}" \
@@ -360,7 +373,7 @@ if ! VBoxManage showvminfo "${BOX}" >/dev/null 2>&1; then
 
   ${STARTVM}
 
-  echo -n "Waiting for installer to finish (can take up to 20 minutes) "
+  log_info -n "Waiting for installer to finish (can take up to 20 minutes) "
   while VBoxManage list runningvms | grep "${BOX}" >/dev/null; do
     sleep 20
     echo -n "."
@@ -400,16 +413,16 @@ if [ -n "${ANSIBLE_PLAYBOOK}" ]; then
   fi
 
   ${STARTVM}
-  echo "Waiting for VM ssh server "
+  log_info "Waiting for VM ssh server "
   while ! ansible all -i host.ini -m ping --user ${ANSIBLE_USER} >/dev/null 2>&1; do
     sleep 1
     echo -n "."
   done
   echo ""
-  echo "Running Ansible Playbook ..."
+  log_info "Running Ansible Playbook ..."
   ansible-playbook -i host.ini "${ANSIBLE_PLAYBOOK}"
 
-  echo "Stopping VM ..."
+  log_info "Stopping VM ..."
   ${STOPVM}
 
   # remove the above added NAT rule
@@ -431,17 +444,16 @@ if [ -n "${ANSIBLE_PLAYBOOK}" ]; then
 fi
 
 if [ "$COMPACTVDI" = "1" ]; then
-  echo "Compacting the .vdi ..."
+  log_info "Compacting the .vdi ..."
   VBoxManage modifyhd "${FOLDER_VBOX}/${BOX}/${BOX}.vdi" --compact
 fi
 
-echo "Building Vagrant Box ${BOX}..."
+log_info "Building Vagrant Box ${BOX}..."
 vagrant package --base "${BOX}" --output "${BOX}.box"
 
-echo "Done."
-echo ""
-echo "Add your new box to vagrant with:"
-echo "vagrant box add --name \"myvagrantbox\" ${BOX}.box"
+log_info "Done."
+log_info "Add your new box to vagrant with:"
+log_info "vagrant box add --name \"myvagrantbox\" ${BOX}.box"
 
 # references:
 # http://blog.ericwhite.ca/articles/2009/11/unattended-debian-lenny-install/
