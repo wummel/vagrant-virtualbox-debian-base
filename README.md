@@ -4,7 +4,7 @@ This script will:
 
  1. download and verify the latest `Debian 10 "buster"` CD image
  2. ... do some magic to turn it into a vagrant box file
- 3. output `debian-buster-i386.box` or `debian-buster-amd64.box`
+ 3. output `debian-buster-amd64.box`
 
 To add new boxes to vagrant:
 
@@ -67,8 +67,6 @@ You can affect the default behaviour of the script using environment variables:
     VAR=value ./build.sh
 
 The following variables are supported:
-
-* `ARCH` - Architecture to build. Either `i386` or `amd64`. Default is `amd64`.
 
 * `DEBIAN_CDIMAGE` - Domain to download the Debian installer from. Default is `cdimage.debian.org`. Example: `ftp.de.debian.org`.
 

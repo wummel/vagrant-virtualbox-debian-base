@@ -3,7 +3,7 @@
 #
 # 1. download and verify the latest Debian 10 "Buster" CD image
 # 2. ... do some magic to turn it into a vagrant box file
-# 3. output debian-buster-i386.box or debian-buster-amd64.box
+# 3. output debian-buster-amd64.box
 #
 # See README.md for more info
 
@@ -97,8 +97,8 @@ CURL_OPTS="--fail --location"
 
 # Distribution name
 DEBIAN_DIST=buster
-# Env option: architecture (i386 or amd64)
-ARCH=${ARCH:-amd64}
+# architecture amd64
+ARCH=amd64
 # RAM size of the generated box
 # note: selecting too few RAM results in warnings from the debian installer
 RAM_MB=1024
@@ -128,11 +128,7 @@ ISO_URL="${ISO_BASEURL}/${ISO_FILE}"
 # note: the key is hardcoded, this might change in the future
 GPG_KEY="DF9B 9C49 EAA9 2984 3258  9D76 DA87 E80D 6294 BE9B"
 # Map Debian architecture to VirtualBox OS type
-if [ "$ARCH" = "amd64" ]; then
-  VBOX_OSTYPE=Debian_64
-else
-  VBOX_OSTYPE=Debian
-fi
+VBOX_OSTYPE=Debian_64
 # Env option: Use headless mode or GUI
 VM_GUI="${VM_GUI:-}"
 if [ "x${VM_GUI}" == "xyes" ] || [ "x${VM_GUI}" == "x1" ]; then
